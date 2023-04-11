@@ -188,7 +188,7 @@ const render = (
   const halfHeight = Math.floor(height / 2);
   const origin = vec3(0, 0, 0);
   const samples: Vec3[][][] = [];
-  const timeouts = [];
+  const timeouts: ReturnType<typeof setTimeout>[] = [];
 
   for (let s = 0; s < sampleCount; s++) {
     start();
@@ -269,6 +269,7 @@ function App() {
 
   return (
     <div className="App">
+      {samplesStarted > samplesFinished ? <div>Rendering</div> : null}
       <Canvas animating={samplesStarted > samplesFinished} width={width} height={height} init={init} frame={frame} />
     </div>
   );
