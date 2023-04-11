@@ -34,7 +34,7 @@ const objects: Sceen = [
     position: vec3(1000, 0, 0),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(1, 0, 0),
+    reflectivity: rgb(0.8, 0, 0),
     roughness: 10,
   },
   {
@@ -42,7 +42,7 @@ const objects: Sceen = [
     position: vec3(-1000, 0, 0),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0, 1, 0),
+    reflectivity: rgb(0, 0.8, 0),
     roughness: 3,
   },
   {
@@ -50,7 +50,7 @@ const objects: Sceen = [
     position: vec3(0, 1000, 0),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(1, 1, 1),
+    reflectivity: rgb(0.8, 0.8, 0.8),
     roughness: 3,
   },
   {
@@ -58,7 +58,7 @@ const objects: Sceen = [
     position: vec3(0, -1000, 0),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(1, 1, 1),
+    reflectivity: rgb(0.8, 0.8, 0.8),
     roughness: 3,
   },
   {
@@ -66,7 +66,7 @@ const objects: Sceen = [
     position: vec3(0, 0, 1000),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(1, 1, 1),
+    reflectivity: rgb(0.8, 0.8, 0.8),
     roughness: 3,
   },
   {
@@ -74,7 +74,7 @@ const objects: Sceen = [
     position: vec3(0, -14.5, 7),
     radius: 5,
     emission: rgb(5550, 5550, 5550),
-    reflectivity: rgb(1, 1, 1),
+    reflectivity: rgb(0.8, 0.8, 0.8),
     roughness: 3,
   },
   {
@@ -82,7 +82,7 @@ const objects: Sceen = [
     position: vec3(3, 7, 7),
     radius: 3,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(1, 1, 1),
+    reflectivity: rgb(0.8, 0.8, 0.8),
     roughness: 0,
   },
 ];
@@ -188,10 +188,11 @@ const render = (
   const halfHeight = Math.floor(height / 2);
   const origin = vec3(0, 0, 0);
   const samples: Vec3[][][] = [];
+  const timeouts = [];
 
   for (let s = 0; s < sampleCount; s++) {
     start();
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
           const x = i - halfWidth;
@@ -209,7 +210,10 @@ const render = (
       }
       finish();
     }, 1);
+    timeouts.push(timeout);
   }
+
+  return timeouts;
 };
 
 function App() {
@@ -248,7 +252,12 @@ function App() {
 
   useEffect(() => {
     if (imageData.current) {
-      render(width, height, focalLength, samples, bounces, drawPixel, [addSampleStarted, addSampleFinished]);
+      const timeouts = render(width, height, focalLength, samples, bounces, drawPixel, [
+        addSampleStarted,
+        addSampleFinished,
+      ]);
+
+      return () => timeouts.forEach((t) => clearTimeout(t));
     }
   }, [ready, imageData.current]);
 
