@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import Canvas from "./Canvas";
 import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
-import { Vec2, Vec3, add, vec2, vec3, normalize, mul, sub, mag, dot, reflect, mulParts } from "./utils/math";
+import { Vec2, Vec3, add, vec2, vec3, normalize, mul, sub, mag, dot, reflect, mulParts, avg } from "./utils/math";
 import { RGB, rgb, rgbToVec3, vec3ToRGB } from "./utils/colour";
 
 type Shape = "sphere" | "cube";
@@ -156,20 +156,66 @@ const intersection = (origin: Vec3, direction: Vec3, sceen: Sceen): Intersection
   return closestIntersection;
 };
 
-const render = () => {};
+const trace = (origin: Vec3, direction: Vec3, sceen: Sceen, steps: number): Vec3 => {
+  const intersect = intersection(origin, direction, sceen);
+
+  if (intersect.collided && steps > 0 && intersect.object !== undefined) {
+    const reflectedDirection = reflect(direction, intersect.normal);
+
+    const bounce = trace(
+      intersect.point,
+      reflectedDirection,
+      objects.filter((o) => o != intersect.object),
+      steps - 1,
+    );
+
+    return add(rgbToVec3(intersect.object?.emission), mulParts(bounce, rgbToVec3(intersect.object.reflectivity)));
+  }
+
+  return vec3(0, 0, 0);
+};
+
+const render = async (
+  width: number,
+  height: number,
+  focalLength: number,
+  sampleCount: number,
+  bounces: number,
+  drawPixel: any,
+) => {
+  const halfWidth = Math.floor(width / 2);
+  const halfHeight = Math.floor(height / 2);
+  const origin = vec3(0, 0, 0);
+  const sampleStore: Vec3[][] = [];
+
+  for (let i = 0; i < width; i++) {
+    for (let j = 0; j < height; j++) {
+      const x = i - halfWidth;
+      const y = j - halfHeight;
+      const pos = i * j;
+      const direction = normalize(vec3(x, y, focalLength));
+
+      const samples: Vec3[] = [];
+      for (let s = 0; s < sampleCount; s++) {
+        samples.push(trace(origin, direction, objects, bounces));
+      }
+      const colour = avg(samples);
+
+      drawPixel({ x: i, y: j }, vec3ToRGB(colour));
+    }
+  }
+};
 
 function App() {
   //const { width, height } = useMaxSize(ASPECT_4_3);
   const width = 250;
   const height = 250;
   const focalLength = 50;
-  const samples = 50;
+  const samples = 10;
   const bounces = 4;
   const imageData = useRef<ImageData>();
   const [ready, setReady] = useState<boolean>(false);
   const [rendering, setRendering] = useState<boolean>(true);
-  const [traceCount, setTractCount] = useState<number>(0);
-  const addTractCount = () => setTractCount((c) => c + 1);
 
   const drawPixel = useCallback(
     ({ x, y }: Vec2, colour: RGB) => {
@@ -189,53 +235,11 @@ function App() {
     const height = Math.floor(context.canvas.height);
     imageData.current = context.createImageData(width, height);
     setReady(true);
-    setTractCount(0);
-  }, []);
-
-  const trace = useCallback((origin: Vec3, direction: Vec3, sceen: Sceen, steps: number): Vec3 => {
-    addTractCount();
-    const intersect = intersection(origin, direction, sceen);
-
-    if (intersect.collided && steps > 0 && intersect.object !== undefined) {
-      const reflectedDirection = reflect(direction, intersect.normal);
-
-      const bounce = trace(
-        intersect.point,
-        reflectedDirection,
-        objects.filter((o) => o != intersect.object),
-        steps - 1,
-      );
-
-      return add(rgbToVec3(intersect.object?.emission), mulParts(bounce, rgbToVec3(intersect.object.reflectivity)));
-    }
-
-    return vec3(0, 0, 0);
   }, []);
 
   useEffect(() => {
     if (imageData.current) {
-      const halfWidth = Math.floor(width / 2);
-      const halfHeight = Math.floor(height / 2);
-      const origin = vec3(0, 0, 0);
-
-      for (let i = 0; i < width; i++) {
-        for (let j = 0; j < height; j++) {
-          const x = i - halfWidth;
-          const y = j - halfHeight;
-
-          const direction = normalize(vec3(x, y, focalLength));
-
-          let colour = vec3(0, 0, 0);
-          for (let i = 0; i < samples; i++) {
-            colour = add(colour, trace(origin, direction, objects, bounces));
-          }
-          colour = mul(colour, 1 / samples);
-
-          drawPixel({ x: i, y: j }, vec3ToRGB(colour));
-        }
-      }
-
-      //setRendering(false);
+      render(width, height, focalLength, samples, bounces, drawPixel);
     }
   }, [ready, imageData.current]);
 
@@ -247,7 +251,6 @@ function App() {
 
   return (
     <div className="App">
-      <div>{traceCount.toLocaleString()}</div>
       <Canvas animating={rendering} width={width} height={height} init={init} frame={frame} />
     </div>
   );
