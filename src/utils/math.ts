@@ -28,3 +28,5 @@ export const mulParts = (a: Vec3, b: Vec3): Vec3 => vec3(a.x * b.x, a.y * b.y, a
 export const dot = (a: Vec3, b: Vec3): number => a.x * b.x + a.y * b.y + a.z * b.z;
 
 export const normalize = (vec: Vec3): Vec3 => mul(vec, 1 / mag(vec));
+
+export const reflect = (direction: Vec3, normal: Vec3) => sub(direction, mul(normal, dot(direction, normal) * 2));

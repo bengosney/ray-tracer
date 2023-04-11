@@ -1,16 +1,18 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import Canvas from "./Canvas";
 import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
-import { Vec2, Vec3, add, vec2, vec3, normalize, mul } from "./utils/math";
-import { RGB, rgb, vec3ToRGB } from "./utils/colour";
+import { Vec2, Vec3, add, vec2, vec3, normalize, mul, sub, mag, dot, reflect, mulParts } from "./utils/math";
+import { RGB, rgb, rgbToVec3, vec3ToRGB } from "./utils/colour";
 
-type Shape = "sphere";
+type Shape = "sphere" | "cube";
 
 interface Object {
   shape: Shape;
   position: Vec3;
-  colour: RGB;
+  emission: RGB;
+  reflectivity: RGB;
+  roughness: number;
 }
 
 interface Sphere extends Object {
@@ -18,30 +20,164 @@ interface Sphere extends Object {
   radius: number;
 }
 
-type Objects = Sphere;
+interface Cube extends Object {
+  shape: "cube";
+}
 
-const objects: Objects[] = [
+type Objects = Sphere | Cube;
+
+type Sceen = Array<Objects>;
+
+const objects: Sceen = [
   {
     shape: "sphere",
-    radius: 3,
+    position: vec3(1000, 0, 0),
+    radius: 990,
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(1, 0, 0),
+    roughness: 10,
+  },
+  {
+    shape: "sphere",
+    position: vec3(-1000, 0, 0),
+    radius: 990,
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(0, 1, 0),
+    roughness: 3,
+  },
+  {
+    shape: "sphere",
+    position: vec3(0, 1000, 0),
+    radius: 990,
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(1, 1, 1),
+    roughness: 3,
+  },
+  {
+    shape: "sphere",
+    position: vec3(0, -1000, 0),
+    radius: 990,
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(1, 1, 1),
+    roughness: 3,
+  },
+  {
+    shape: "sphere",
+    position: vec3(0, 0, 1000),
+    radius: 990,
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(1, 1, 1),
+    roughness: 3,
+  },
+  {
+    shape: "sphere",
+    position: vec3(0, -14.5, 7),
+    radius: 5,
+    emission: rgb(5550, 5550, 5550),
+    reflectivity: rgb(1, 1, 1),
+    roughness: 3,
+  },
+  {
+    shape: "sphere",
     position: vec3(3, 7, 7),
-    colour: rgb(255, 0, 0),
+    radius: 3,
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(1, 1, 1),
+    roughness: 0,
   },
 ];
 
+interface IntersectionResult {
+  collided: boolean;
+  dist: number;
+  point: Vec3;
+  normal: Vec3;
+  object?: Objects;
+}
+
+const sphereIntersection = (origin: Vec3, direction: Vec3, sphere: Sphere): IntersectionResult => {
+  const sphereRay = sub(sphere.position, origin);
+  const distSphereRay = mag(sphereRay);
+  const distToClosestPointOnRay = dot(sphereRay, direction);
+  const distFromClosestPointToSphere = Math.sqrt(distSphereRay ** 2 - distToClosestPointOnRay ** 2);
+
+  const distToIntersection =
+    distToClosestPointOnRay - Math.sqrt(Math.abs(sphere.radius ** 2 - distFromClosestPointToSphere ** 2));
+  const point = add(origin, mul(direction, distToIntersection));
+  let normal = normalize(sub(point, sphere.position));
+
+  normal = normalize(
+    add(normal, mul(vec3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5), sphere.roughness)),
+  );
+
+  if (distToClosestPointOnRay > 0 && distFromClosestPointToSphere < sphere.radius) {
+    return {
+      collided: true,
+      dist: distToIntersection,
+      point: point,
+      normal: normal,
+    };
+  }
+
+  return {
+    collided: false,
+    dist: Infinity,
+    point: vec3(0, 0, 0),
+    normal: vec3(0, 0, 0),
+  };
+};
+
+const intersection = (origin: Vec3, direction: Vec3, sceen: Sceen): IntersectionResult => {
+  const closestIntersection: IntersectionResult = {
+    collided: false,
+    point: vec3(0, 0, 0),
+    dist: Infinity,
+    normal: vec3(0, 0, 0),
+    object: undefined,
+  };
+
+  sceen.forEach((object) => {
+    switch (object.shape) {
+      case "sphere":
+        const intersection = sphereIntersection(origin, direction, object);
+
+        if (intersection.dist < closestIntersection.dist) {
+          closestIntersection.dist = intersection.dist;
+          closestIntersection.object = object;
+          closestIntersection.normal = intersection.normal;
+          closestIntersection.point = intersection.point;
+        }
+
+        closestIntersection.collided = closestIntersection.collided || intersection.collided;
+        break;
+    }
+  });
+
+  return closestIntersection;
+};
+
+const render = () => {};
+
 function App() {
-  const { width, height } = useMaxSize(ASPECT_4_3);
+  //const { width, height } = useMaxSize(ASPECT_4_3);
+  const width = 250;
+  const height = 250;
   const focalLength = 50;
-  const samples = 100;
+  const samples = 50;
+  const bounces = 4;
   const imageData = useRef<ImageData>();
+  const [ready, setReady] = useState<boolean>(false);
+  const [rendering, setRendering] = useState<boolean>(true);
+  const [traceCount, setTractCount] = useState<number>(0);
+  const addTractCount = () => setTractCount((c) => c + 1);
 
   const drawPixel = useCallback(
-    ({ x, y }: Vec2, color: RGB) => {
+    ({ x, y }: Vec2, colour: RGB) => {
       const offset = 4 * (Math.floor(x) + Math.floor(y) * width);
       if (imageData.current !== undefined) {
-        imageData.current.data[offset] = color.r;
-        imageData.current.data[offset + 1] = color.g;
-        imageData.current.data[offset + 2] = color.b;
+        imageData.current.data[offset] = colour.r;
+        imageData.current.data[offset + 1] = colour.g;
+        imageData.current.data[offset + 2] = colour.b;
         imageData.current.data[offset + 3] = 255;
       }
     },
@@ -52,27 +188,58 @@ function App() {
     const width = Math.floor(context.canvas.width);
     const height = Math.floor(context.canvas.height);
     imageData.current = context.createImageData(width, height);
+    setReady(true);
+    setTractCount(0);
   }, []);
 
-  const trace = (origin: Vec3, direction: Vec3, objects: Objects[], steps: number): Vec3 => {
-    return vec3(0, 0, 0);
-  };
+  const trace = useCallback((origin: Vec3, direction: Vec3, sceen: Sceen, steps: number): Vec3 => {
+    addTractCount();
+    const intersect = intersection(origin, direction, sceen);
 
-  const frame = useCallback((context: CanvasRenderingContext2D, since: number) => {
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        const direction = normalize(vec3(x, y, focalLength));
+    if (intersect.collided && steps > 0 && intersect.object !== undefined) {
+      const reflectedDirection = reflect(direction, intersect.normal);
 
-        let color = vec3(0, 0, 0);
-        for (let i = 0; i < samples; i++) {
-          color = add(color, trace(vec3(0, 0, 0), direction, objects, 4));
-        }
-        color = mul(color, 1 / samples);
+      const bounce = trace(
+        intersect.point,
+        reflectedDirection,
+        objects.filter((o) => o != intersect.object),
+        steps - 1,
+      );
 
-        drawPixel({ x, y }, vec3ToRGB(color));
-      }
+      return add(rgbToVec3(intersect.object?.emission), mulParts(bounce, rgbToVec3(intersect.object.reflectivity)));
     }
 
+    return vec3(0, 0, 0);
+  }, []);
+
+  useEffect(() => {
+    if (imageData.current) {
+      const halfWidth = Math.floor(width / 2);
+      const halfHeight = Math.floor(height / 2);
+      const origin = vec3(0, 0, 0);
+
+      for (let i = 0; i < width; i++) {
+        for (let j = 0; j < height; j++) {
+          const x = i - halfWidth;
+          const y = j - halfHeight;
+
+          const direction = normalize(vec3(x, y, focalLength));
+
+          let colour = vec3(0, 0, 0);
+          for (let i = 0; i < samples; i++) {
+            colour = add(colour, trace(origin, direction, objects, bounces));
+          }
+          colour = mul(colour, 1 / samples);
+
+          drawPixel({ x: i, y: j }, vec3ToRGB(colour));
+        }
+      }
+
+      //setRendering(false);
+    }
+  }, [ready, imageData.current]);
+
+  const frame = useCallback((context: CanvasRenderingContext2D, since: number) => {
     if (imageData.current !== undefined) {
       context.putImageData(imageData.current, 0, 0);
     }
@@ -80,7 +247,8 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas animating={false} width={width} height={height} init={init} frame={frame} />
+      <div>{traceCount.toLocaleString()}</div>
+      <Canvas animating={rendering} width={width} height={height} init={init} frame={frame} />
     </div>
   );
 }
