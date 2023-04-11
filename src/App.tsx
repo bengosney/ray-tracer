@@ -5,6 +5,8 @@ import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
 import { Vec2, Vec3, add, vec2, vec3, normalize, mul, sub, mag, dot, reflect, mulParts, avg } from "./utils/math";
 import { RGB, rgb, rgbToVec3, vec3ToRGB } from "./utils/colour";
 
+import initWASM, { greet } from "wasm-lib";
+
 type Shape = "sphere" | "cube";
 
 interface Object {
@@ -221,7 +223,7 @@ function App() {
   const width = 320;
   const height = 240;
   const focalLength = 50;
-  const samples = 100;
+  const samples = 3;
   const bounces = 4;
   const imageData = useRef<ImageData>();
   const [ready, setReady] = useState<boolean>(false);
@@ -229,6 +231,10 @@ function App() {
   const addSampleStarted = () => setSamplesStarted((s) => s + 1);
   const [samplesFinished, setSamplesFinished] = useState<number>(0);
   const addSampleFinished = () => setSamplesFinished((s) => s + 1);
+
+  useEffect(() => {
+    initWASM().then(() => greet("World"));
+  }, []);
 
   const drawPixel = useCallback(
     ({ x, y }: Vec2, colour: RGB) => {
