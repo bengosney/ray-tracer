@@ -1,9 +1,10 @@
-mod sceen;
+mod scene;
 mod rgb;
 mod vec2;
 mod vec3;
 
 use rgb::RGB;
+use scene::Scene;
 use vec3::Vec3;
 
 use wasm_bindgen::prelude::*;
@@ -51,47 +52,10 @@ pub fn bob(by: f32) -> Vec3 {
     Vec3::from(colour) * 4.0
 }
 
-#[wasm_bindgen]
-pub struct SceenElement {
-    shape: String,
-    position: Vec<i64>,
-    radius: i64,
-    emission: Vec<i64>,
-    reflectivity: Vec<f64>,
-    roughness: i64,
-}
 
 #[wasm_bindgen]
-impl SceenElement {
-    #[wasm_bindgen(constructor)]
-    pub fn new(
-        shape: String,
-        position: Vec<i64>,
-        radius: i64,
-        emission: Vec<i64>,
-        reflectivity: Vec<f64>,
-        roughness: i64,
-    ) -> SceenElement {
-        SceenElement {
-            shape: shape,
-            position: position,
-            radius: radius,
-            emission: emission,
-            reflectivity: reflectivity,
-            roughness: roughness,
-        }
-    }
-}
-
-#[wasm_bindgen]
-pub fn render(sceen: SceenElement) {
-    log("might work at some point");
-    log(&format!("shape: {}", sceen.shape));
-    log(&format!("position: {:?}", sceen.position));
-    log(&format!("radius: {}", sceen.radius));
-    log(&format!("emission: {:?}", sceen.emission));
-    log(&format!("reflectivity: {:?}", sceen.reflectivity));
-    log(&format!("roughness: {}", sceen.roughness));
+pub fn render(_scene: Scene) {
+    log(&format!("might work at some point:"));
 }
 
 #[cfg(test)]
