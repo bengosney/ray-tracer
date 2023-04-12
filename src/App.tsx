@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import Canvas from "./Canvas";
 import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
-import { Vec2, Vec3, add, vec2, vec3, normalize, mul, sub, mag, dot, reflect, mulParts, avg } from "./utils/math";
+import { Vec2, Vec3, add, vec3, normalize, mul, sub, mag, dot, reflect, mulParts, avg } from "./utils/math";
 import { RGB, rgb, rgbToVec3, vec3ToRGB } from "./utils/colour";
 
-import initWASM, { greet } from "wasm-lib";
+import initWASM, { greet, bob, RGB as wasmRGB } from "wasm-lib";
 
 type Shape = "sphere" | "cube";
 
@@ -26,7 +26,7 @@ interface Cube extends Object {
   shape: "cube";
 }
 
-type Objects = Sphere | Cube;
+type Objects = Sphere; // | Cube;
 
 type Sceen = Array<Objects>;
 
@@ -233,7 +233,13 @@ function App() {
   const addSampleFinished = () => setSamplesFinished((s) => s + 1);
 
   useEffect(() => {
-    initWASM().then(() => greet("World"));
+    initWASM().then(() => {
+      greet("World");
+      const colour = bob(3.75);
+      console.log("colour", colour);
+      const thing = new wasmRGB(1, 2, 3);
+      console.log(thing);
+    });
   }, []);
 
   const drawPixel = useCallback(

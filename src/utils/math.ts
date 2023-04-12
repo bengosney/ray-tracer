@@ -1,3 +1,5 @@
+import { RGB } from "./colour";
+
 export interface Vec2 {
   x: number;
   y: number;
@@ -8,6 +10,8 @@ export interface Vec3 {
   y: number;
   z: number;
 }
+
+export const vecToArray = (vec: Vec2 | Vec3 | RGB): number[] => Object.values(vec);
 
 export const degreeToRadians = (degree: number): number => (degree * Math.PI) / 180;
 
