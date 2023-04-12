@@ -1,3 +1,4 @@
+mod sceen;
 mod rgb;
 mod vec2;
 mod vec3;
