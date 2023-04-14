@@ -65,8 +65,8 @@ impl Scene {
     }
 
     pub fn render(&self) -> Vec<u16> {
-        let half_width: u32 = self.width / 2;
-        let half_height: u32 = self.height / 2;
+        let half_width: i32 = (self.width / 2) as i32;
+        let half_height: i32 = (self.height / 2) as i32;
 
         let origin: Vec3 = Vec3 {
             x: 0.0,
@@ -77,10 +77,10 @@ impl Scene {
             vec![vec![vec![]; self.height as usize]; self.width as usize];
 
         for _ in 0..self.samples {
-            for i in 0..self.width {
-                for j in 0..self.height {
-                    let x = i - half_width;
-                    let y = j - half_height;
+            for i in 0..self.width as i32 {
+                for j in 0..self.height as i32 {
+                    let x: i32 = i - half_width;
+                    let y: i32 = j - half_height;
                     let direction = (Vec3 {
                         x: x as f32,
                         y: y as f32,
