@@ -5,7 +5,7 @@ import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
 import { Vec2, Vec3, add, vec3, normalize, mul, sub, mag, dot, reflect, mulParts, avg } from "./utils/math";
 import { RGB, rgb, rgbToVec3, vec3ToRGB } from "./utils/colour";
 
-import initWASM, { greet, bob, RGB as wasmRGB } from "wasm-lib";
+import initWASM, { Scene, Entity, Shape as wasmShape, Vec3 as wasmVec3, RGB as wasmRGB } from "wasm-lib";
 
 type Shape = "sphere" | "cube";
 
@@ -234,11 +234,20 @@ function App() {
 
   useEffect(() => {
     initWASM().then(() => {
-      greet("World");
-      const colour = bob(3.75);
-      console.log("colour", colour);
-      const thing = new wasmRGB(1, 2, 3);
-      console.log(thing);
+      const scene = new Scene(320, 240, 50, 3, 4);
+      objects.forEach((o) => {
+        const entity = new Entity(
+          wasmShape.Sphere,
+          new wasmVec3(o.position.x, o.position.y, o.position.z),
+          new wasmRGB(o.emission.r, o.emission.g, o.emission.b),
+          new wasmRGB(o.reflectivity.r, o.reflectivity.g, o.reflectivity.b),
+          o.roughness,
+          o.radius,
+        );
+        scene.add_entity(entity);
+      });
+      console.log("mag", mag(vec3(1, 2, 3)));
+      console.log("scene", scene.render());
     });
   }, []);
 
