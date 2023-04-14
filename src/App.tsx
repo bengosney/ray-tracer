@@ -233,29 +233,31 @@ function App() {
   const addSampleFinished = () => setSamplesFinished((s) => s + 1);
 
   useEffect(() => {
-    initWASM().then(() => {
-      const scene = new Scene(320, 240, 50, 1, 4);
-      objects.forEach((o) => {
-        const entity = new Entity(
-          wasmShape.Sphere,
-          new wasmVec3(o.position.x, o.position.y, o.position.z),
-          new wasmRGB(o.emission.r, o.emission.g, o.emission.b),
-          new wasmRGB(o.reflectivity.r, o.reflectivity.g, o.reflectivity.b),
-          o.roughness,
-          o.radius,
-        );
-        scene.add_entity(entity);
-      });
-      console.log("stating render");
-      const pixels = scene.render();
-      console.log("scene", pixels);
-      if (imageData.current !== undefined) {
-        for (let i = 0; i < pixels.length; i++) {
-          imageData.current.data[i] = pixels[i];
+    if (ready) {
+      initWASM().then(() => {
+        const scene = new Scene(320, 240, 50, 1, 4);
+        objects.forEach((o) => {
+          const entity = new Entity(
+            wasmShape.Sphere,
+            new wasmVec3(o.position.x, o.position.y, o.position.z),
+            new wasmRGB(o.emission.r, o.emission.g, o.emission.b),
+            new wasmRGB(o.reflectivity.r, o.reflectivity.g, o.reflectivity.b),
+            o.roughness,
+            o.radius,
+          );
+          scene.add_entity(entity);
+        });
+        console.log("stating render");
+        const pixels = scene.render();
+        console.log("scene", pixels);
+        if (imageData.current !== undefined) {
+          for (let i = 0; i < pixels.length; i++) {
+            imageData.current.data[i] = pixels[i];
+          }
         }
-      }
-    });
-  }, []);
+      });
+    }
+  }, [ready]);
 
   const drawPixel = useCallback(
     ({ x, y }: Vec2, colour: RGB) => {
@@ -278,7 +280,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (imageData.current) {
+    if (imageData.current && false) {
       const timeouts = render(width, height, focalLength, samples, bounces, drawPixel, [
         addSampleStarted,
         addSampleFinished,

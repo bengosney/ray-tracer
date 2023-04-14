@@ -73,24 +73,24 @@ impl Scene {
         return Vec3::new(0.0, 0.0, 0.0);
     }
 
-    fn samples_to_pixel_map(samples: Vec<Vec<Vec<Vec3>>>) -> Vec<u16> {
-        let mut pixels: Vec<u16> = vec![];
+    fn samples_to_pixel_map(samples: Vec<Vec<Vec<Vec3>>>) -> Vec<u32> {
+        let mut pixels: Vec<u32> = vec![];
 
         for row in samples {
             for sample_group in row {
                 let sample = Vec3::avg(&sample_group);
 
-                pixels.push(sample.x as u16);
-                pixels.push(sample.y as u16);
-                pixels.push(sample.z as u16);
-                pixels.push(0 as u16);
+                pixels.push(sample.x as u32);
+                pixels.push(sample.y as u32);
+                pixels.push(sample.z as u32);
+                pixels.push(255 as u32);
             }
         }
 
         return pixels;
     }
 
-    pub fn render(&self) -> Vec<u16> {
+    pub fn render(&self) -> Vec<u32> {
         let half_width: i32 = (self.width / 2) as i32;
         let half_height: i32 = (self.height / 2) as i32;
 
