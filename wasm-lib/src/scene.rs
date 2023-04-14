@@ -31,16 +31,16 @@ impl Scene {
     }
 
     fn intersection(origin: Vec3, direction: Vec3, entities: &Vec<Entity>) -> Intersection {
-        let mut closestIntersection: Intersection = Intersection::empty();
+        let mut closest_intersection: Intersection = Intersection::empty();
 
         for entity in entities {
             let intersection = entity.intersection(origin, direction);
-            if intersection.dist < closestIntersection.dist {
-                closestIntersection = intersection;
+            if intersection.dist < closest_intersection.dist {
+                closest_intersection = intersection;
             }
         }
 
-        return closestIntersection;
+        return closest_intersection;
     }
 
     fn trace(origin: Vec3, direction: Vec3, entities: &Vec<Entity>, steps: u32) -> Vec3 {
