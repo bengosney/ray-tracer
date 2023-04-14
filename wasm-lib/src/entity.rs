@@ -1,7 +1,7 @@
 use rand::Rng;
 use wasm_bindgen::prelude::*;
 
-use crate::{rgb::RGB, vec3::Vec3, intersection::Intersection};
+use crate::{intersection::Intersection, rgb::RGB, vec3::Vec3};
 
 #[wasm_bindgen]
 #[derive(Copy, Clone, PartialEq)]

@@ -1,9 +1,9 @@
-mod scene;
-mod rgb;
-mod vec2;
-mod vec3;
 mod entity;
 mod intersection;
+mod rgb;
+mod scene;
+mod vec2;
+mod vec3;
 
 use rgb::RGB;
 use scene::Scene;
@@ -53,7 +53,6 @@ pub fn bob(by: f32) -> Vec3 {
 
     Vec3::from(colour) * 4.0
 }
-
 
 #[wasm_bindgen]
 pub fn render(_scene: Scene) {

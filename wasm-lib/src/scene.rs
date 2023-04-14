@@ -1,7 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-use crate::{vec3::Vec3, entity::Entity, intersection::Intersection};
-
+use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
 #[wasm_bindgen]
 pub struct Scene {
@@ -12,7 +11,6 @@ pub struct Scene {
     pub samples: u32,
     pub bounces: u32,
 }
-
 
 #[wasm_bindgen]
 impl Scene {
