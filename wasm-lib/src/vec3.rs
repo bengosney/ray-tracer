@@ -7,7 +7,7 @@ use std::ops::Sub;
 use crate::rgb::RGB;
 
 #[wasm_bindgen]
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Vec3 {
     pub x: f32,
     pub y: f32,
@@ -21,11 +21,11 @@ impl Vec3 {
         Vec3 { x: x, y: y, z: z }
     }
 
-    pub fn mag(self) -> f32 {
-        (self.x * self.x) + (self.y * self.y) + (self.z * self.z)
+    pub fn mag(&self) -> f32 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
-    pub fn dot(self, rhs: Self) -> f32 {
+    pub fn dot(&self, rhs: Self) -> f32 {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 
@@ -33,8 +33,8 @@ impl Vec3 {
         self * (1.0 / self.mag())
     }
 
-    pub fn reflect(self, normal: Self) -> Self {
-        self - (normal * self.dot(normal))
+    pub fn reflect(&self, normal: Self) -> Self {
+        *self - (normal * self.dot(normal))
     }
 }
 
@@ -117,5 +117,90 @@ impl Mul<f32> for Vec3 {
             y: self.y * rhs,
             z: self.z * rhs,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_vec3() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = Vec3::new(2.0, 2.0, 2.0);
+
+        assert_eq!(a + b, Vec3::new(3.0, 4.0, 5.0));
+    }
+
+    #[test]
+    fn test_add_f32() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = 2.0;
+
+        assert_eq!(a + b, Vec3::new(3.0, 4.0, 5.0));
+    }
+
+    #[test]
+    fn test_sub_vec3() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = Vec3::new(2.0, 2.0, 2.0);
+
+        assert_eq!(a - b, Vec3::new(-1.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn test_sub_f32() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = 2.0;
+
+        assert_eq!(a - b, Vec3::new(-1.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn test_mul_vec3() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = Vec3::new(2.0, 2.0, 2.0);
+
+        assert_eq!(a * b, Vec3::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn test_mul_f32() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = 2.0;
+
+        assert_eq!(a * b, Vec3::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn test_mag() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+
+        assert_eq!(a.mag(), 3.7416573867739413);
+    }
+
+    #[test]
+    fn test_dot() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = Vec3::new(2.0, 2.0, 2.0);
+
+        assert_eq!(a.dot(b), 12.0);
+    }
+
+    #[test]
+    fn test_normalize() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let normalized = a.normalize();
+
+        assert_eq!(normalized.mag().round(), 1.0);
+        assert_eq!(normalized, Vec3::new(0.26726124, 0.5345225, 0.8017837));
+    }
+
+    #[test]
+    fn test_reflect() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = Vec3::new(2.0, 2.0, 2.0);
+
+        assert_eq!(a.reflect(b), Vec3::new(-23.0, -22.0, -21.0));
     }
 }

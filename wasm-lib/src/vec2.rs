@@ -5,7 +5,7 @@ use std::ops::Mul;
 use std::ops::Sub;
 
 #[wasm_bindgen()]
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32,
@@ -19,7 +19,7 @@ impl Vec2 {
     }
 
     pub fn mag(self) -> f32 {
-        (self.x * self.x) + (self.y * self.y)
+        (self.x * self.x + self.y * self.y).sqrt()
     }
 
     pub fn dot(self, rhs: Self) -> f32 {
@@ -98,5 +98,90 @@ impl Mul<f32> for Vec2 {
             x: self.x * rhs,
             y: self.y * rhs,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_vec2() {
+        let a = Vec2::new(1.0, 2.0);
+        let b = Vec2::new(2.0, 2.0);
+
+        assert_eq!(a + b, Vec2::new(3.0, 4.0));
+    }
+
+    #[test]
+    fn test_add_f32() {
+        let a = Vec2::new(1.0, 2.0);
+        let b = 2.0;
+
+        assert_eq!(a + b, Vec2::new(3.0, 4.0));
+    }
+
+    #[test]
+    fn test_sub_vec2() {
+        let a = Vec2::new(1.0, 2.0);
+        let b = Vec2::new(2.0, 2.0);
+
+        assert_eq!(a - b, Vec2::new(-1.0, 0.0));
+    }
+
+    #[test]
+    fn test_sub_f32() {
+        let a = Vec2::new(1.0, 3.0);
+        let b = 2.0;
+
+        assert_eq!(a - b, Vec2::new(-1.0, 1.0));
+    }
+
+    #[test]
+    fn test_mul_vec2() {
+        let a = Vec2::new(1.0, 2.0);
+        let b = Vec2::new(2.0, 2.0);
+
+        assert_eq!(a * b, Vec2::new(2.0, 4.0));
+    }
+
+    #[test]
+    fn test_mul_f32() {
+        let a = Vec2::new(1.0, 2.0);
+        let b = 2.0;
+
+        assert_eq!(a * b, Vec2::new(2.0, 4.0));
+    }
+
+    #[test]
+    fn test_mag() {
+        let a = Vec2::new(1.0, 2.0);
+
+        assert_eq!(a.mag(), 2.236068);
+    }
+
+    #[test]
+    fn test_dot() {
+        let a = Vec2::new(1.0, 2.0);
+        let b = Vec2::new(2.0, 2.0);
+
+        assert_eq!(a.dot(b), 6.0);
+    }
+
+    #[test]
+    fn test_normalize() {
+        let a = Vec2::new(1.0, 2.0);
+        let normalized = a.normalize();
+
+        assert_eq!(normalized.mag().round(), 1.0);
+        assert_eq!(normalized, Vec2::new(0.4472136, 0.8944272));
+    }
+
+    #[test]
+    fn test_reflect() {
+        let a = Vec2::new(1.0, 2.0);
+        let b = Vec2::new(2.0, 2.0);
+
+        assert_eq!(a.reflect(b), Vec2::new(-11.0, -10.0));
     }
 }
