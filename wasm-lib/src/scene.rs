@@ -64,6 +64,23 @@ impl Scene {
         return Vec3::new(0.0, 0.0, 0.0);
     }
 
+    fn samples_to_pixel_map(samples: Vec<Vec<Vec<Vec3>>>) -> Vec<u16> {
+        let mut pixels: Vec<u16> = vec![];
+
+        for row in samples {
+            for sample_group in row {
+                let sample = Vec3::avg(&sample_group);
+
+                pixels.push(sample.x as u16);
+                pixels.push(sample.y as u16);
+                pixels.push(sample.z as u16);
+                pixels.push(0 as u16);
+            }
+        }
+
+        return pixels;
+    }
+
     pub fn render(&self) -> Vec<u16> {
         let half_width: i32 = (self.width / 2) as i32;
         let half_height: i32 = (self.height / 2) as i32;
@@ -90,14 +107,11 @@ impl Scene {
 
                     let res = Self::trace(origin, direction, &self.entities, self.bounces);
                     samples[i as usize][j as usize].push(res);
-                    //let colour = Vec3::avg(&samples[x as usize][y as usize]);
-
-                    //drawPixel({ x: i, y: j }, vec3ToRGB(colour));
                 }
             }
         }
 
-        todo!("returned rendered pixles")
+        return Scene::samples_to_pixel_map(samples);
     }
 }
 

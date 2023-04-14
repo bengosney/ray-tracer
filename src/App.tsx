@@ -234,7 +234,7 @@ function App() {
 
   useEffect(() => {
     initWASM().then(() => {
-      const scene = new Scene(320, 240, 50, 3, 4);
+      const scene = new Scene(320, 240, 50, 1, 4);
       objects.forEach((o) => {
         const entity = new Entity(
           wasmShape.Sphere,
@@ -246,8 +246,14 @@ function App() {
         );
         scene.add_entity(entity);
       });
-      console.log("mag", mag(vec3(1, 2, 3)));
-      console.log("scene", scene.render());
+      console.log("stating render");
+      const pixels = scene.render();
+      console.log("scene", pixels);
+      if (imageData.current !== undefined) {
+        for (let i = 0; i < pixels.length; i++) {
+          imageData.current.data[i] = pixels[i];
+        }
+      }
     });
   }, []);
 
