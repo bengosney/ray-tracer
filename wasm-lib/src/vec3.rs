@@ -221,6 +221,6 @@ mod tests {
             Vec3::new(2.0, 2.0, 2.0),
         ];
 
-        assert_eq!(Vec3::avg(vecs), Vec3::new(2.0, 2.0, 2.0));
+        assert_eq!(Vec3::avg(&vecs), Vec3::new(2.0, 2.0, 2.0));
     }
 }

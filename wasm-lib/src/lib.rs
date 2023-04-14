@@ -2,6 +2,8 @@ mod scene;
 mod rgb;
 mod vec2;
 mod vec3;
+mod entity;
+mod intersection;
 
 use rgb::RGB;
 use scene::Scene;

@@ -1,90 +1,7 @@
-use rand::Rng;
 use wasm_bindgen::prelude::*;
 
-use crate::{rgb::RGB, vec3::Vec3};
+use crate::{vec3::Vec3, entity::Entity, intersection::Intersection};
 
-#[wasm_bindgen]
-#[derive(Copy, Clone, PartialEq)]
-pub enum Shape {
-    Sphere,
-    Cube,
-}
-
-#[wasm_bindgen()]
-#[derive(Copy, Clone, PartialEq)]
-pub struct Entity {
-    pub shape: Shape,
-    pub position: Vec3,
-    pub emission: RGB,
-    pub reflectivity: RGB,
-    pub roughness: f32,
-    pub radius: f32,
-}
-
-impl Entity {
-    pub fn intersection(self, origin: Vec3, direction: Vec3) -> Intersection {
-        match self.shape {
-            Shape::Sphere => self.sphere_intersection(origin, direction),
-            Shape::Cube => todo!("Cube intersection"),
-        }
-    }
-
-    fn sphere_intersection(self, origin: Vec3, direction: Vec3) -> Intersection {
-        let mut rng = rand::thread_rng();
-
-        let sphereRay = self.position - origin;
-        let distSphereRay = sphereRay.mag();
-        let distToClosestPointOnRay = sphereRay.dot(direction);
-        let distFromClosestPointToSphere =
-            (distSphereRay.powi(2) - distToClosestPointOnRay.powi(2)).sqrt();
-
-        let distToIntersection = distToClosestPointOnRay
-            - (self.radius.powi(2) - distFromClosestPointToSphere.powi(2))
-                .abs()
-                .sqrt();
-        let point = origin + (direction * distToIntersection);
-        let roughness = Vec3::new(
-            rng.gen_range(-0.5..0.5),
-            rng.gen_range(-0.5..0.5),
-            rng.gen_range(-0.5..0.5),
-        ) * self.roughness;
-        let normal = (point - self.position).normalize() + roughness;
-
-        if distToClosestPointOnRay > 0.0 && distFromClosestPointToSphere < self.radius {
-            return Intersection {
-                collided: true,
-                dist: distToIntersection,
-                point: point,
-                normal: normal,
-                entity: Some(self),
-            };
-        }
-
-        Intersection::empty()
-    }
-}
-
-#[wasm_bindgen]
-impl Entity {
-    #[wasm_bindgen(constructor)]
-    pub fn new(
-        shape: Shape,
-        position: Vec3,
-        emission: RGB,
-        reflectivity: RGB,
-        roughness: f32,
-        radius: f32,
-    ) -> Self {
-        Self {
-            shape,
-            position,
-            emission,
-            reflectivity,
-            roughness,
-            radius,
-        }
-    }
-}
 
 #[wasm_bindgen]
 pub struct Scene {
@@ -94,26 +11,6 @@ pub struct Scene {
     pub focal_length: u32,
     pub samples: u32,
     pub bounces: u32,
-}
-
-struct Intersection {
-    collided: bool,
-    dist: f32,
-    point: Vec3,
-    normal: Vec3,
-    entity: Option<Entity>,
-}
-
-impl Intersection {
-    pub fn empty() -> Self {
-        Intersection {
-            collided: false,
-            point: Vec3::new(0.0, 0.0, 0.0),
-            dist: f32::INFINITY,
-            normal: Vec3::new(0.0, 0.0, 0.0),
-            entity: None,
-        }
-    }
 }
 
 
@@ -135,7 +32,7 @@ impl Scene {
         self.entities.push(entity);
     }
 
-    fn intersection(origin: Vec3, direction: Vec3, entities: Vec<Entity>) -> Intersection {
+    fn intersection(origin: Vec3, direction: Vec3, entities: &Vec<Entity>) -> Intersection {
         let mut closestIntersection: Intersection = Intersection::empty();
 
         for entity in entities {
@@ -148,32 +45,30 @@ impl Scene {
         return closestIntersection;
     }
 
-    fn trace(origin: Vec3, direction: Vec3, entities: Vec<Entity>, steps: u32) -> Vec3 {
+    fn trace(origin: Vec3, direction: Vec3, entities: &Vec<Entity>, steps: u32) -> Vec3 {
         let intersect = Self::intersection(origin, direction, entities);
 
         if intersect.collided && steps > 0 {
-            let reflectedDirection = direction.reflect(intersect.normal);
+            let reflected_direction = direction.reflect(intersect.normal);
 
             let bounce = Self::trace(
                 intersect.point,
-                reflectedDirection,
+                reflected_direction,
                 entities, //objects.filter((o) => o != intersect.object),
                 steps - 1,
             );
 
+            let entity = intersect.entity.unwrap();
 
-            return add(
-                rgbToVec3(intersect.object?.emission),
-                mulParts(bounce, rgbToVec3(intersect.object.reflectivity)),
-            );
+            return Vec3::from(entity.emission) + (bounce * Vec3::from(entity.reflectivity));
         }
 
         return Vec3::new(0.0, 0.0, 0.0);
     }
 
     pub fn render(&self) -> String {
-        let halfWidth: u32 = self.width / 2;
-        let halfHeight: u32 = self.height / 2;
+        let half_width: u32 = self.width / 2;
+        let half_height: u32 = self.height / 2;
 
         let origin: Vec3 = Vec3 {
             x: 0.0,
@@ -186,8 +81,8 @@ impl Scene {
         for _ in 0..self.samples {
             for i in 0..self.width {
                 for j in 0..self.height {
-                    let x = i - halfWidth;
-                    let y = j - halfHeight;
+                    let x = i - half_width;
+                    let y = j - half_height;
                     let direction = (Vec3 {
                         x: x as f32,
                         y: y as f32,
@@ -195,7 +90,8 @@ impl Scene {
                     })
                     .normalize();
 
-                    samples[x as usize][y as usize].push(direction);
+                    let res = Self::trace(origin, direction, &self.entities, 4);
+                    samples[x as usize][y as usize].push(res);
                     //let colour = Vec3::avg(&samples[x as usize][y as usize]);
 
                     //drawPixel({ x: i, y: j }, vec3ToRGB(colour));
