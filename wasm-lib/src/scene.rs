@@ -3,6 +3,12 @@ use wasm_bindgen::prelude::*;
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
 #[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
+}
+
+#[wasm_bindgen]
 pub struct Scene {
     entities: Vec<Entity>,
     pub width: u32,
@@ -30,7 +36,7 @@ impl Scene {
         self.entities.push(entity);
     }
 
-    fn intersection(origin: Vec3, direction: Vec3, entities: &Vec<Entity>) -> Intersection {
+    fn intersection(origin: Vec3, direction: Vec3, entities: Vec<Entity>) -> Intersection {
         let mut closest_intersection: Intersection = Intersection::empty();
 
         for entity in entities {
@@ -43,20 +49,23 @@ impl Scene {
         return closest_intersection;
     }
 
-    fn trace(origin: Vec3, direction: Vec3, entities: &Vec<Entity>, steps: u32) -> Vec3 {
-        let intersect = Self::intersection(origin, direction, entities);
+    fn trace(origin: Vec3, direction: Vec3, entities: Vec<Entity>, steps: u32) -> Vec3 {
+        let intersect = Self::intersection(origin, direction, entities.clone());
 
         if intersect.collided && steps > 0 {
             let reflected_direction = direction.reflect(intersect.normal);
+            let entity = intersect.entity.unwrap();
+
+            let filtered_entities: Vec<Entity> = entities.into_iter()
+                .filter(|e| e != &entity)
+                .collect();
 
             let bounce = Self::trace(
                 intersect.point,
                 reflected_direction,
-                entities, //objects.filter((o) => o != intersect.object),
+                filtered_entities,
                 steps - 1,
             );
-
-            let entity = intersect.entity.unwrap();
 
             return Vec3::from(entity.emission) + (bounce * Vec3::from(entity.reflectivity));
         }
@@ -105,7 +114,12 @@ impl Scene {
                     })
                     .normalize();
 
-                    let res = Self::trace(origin, direction, &self.entities, self.bounces);
+                    let res = Self::trace(origin, direction, self.entities.clone(), self.bounces);
+
+                    if i == half_width && j == 50 {
+                        log(&format!("{}:{} {}, {}, {}", i, j, res.x, res.y, res.z));
+                    }
+
                     samples[i as usize][j as usize].push(res);
                 }
             }
@@ -131,6 +145,6 @@ mod tests {
         };
         let rendered = scene.render();
 
-        assert_eq!(rendered, vec![0;(scene.width * scene.height * 4) as usize]);
+        assert_eq!(rendered, vec![0; (scene.width * scene.height * 4) as usize]);
     }
 }
