@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
+use crate::{entity::Entity, intersection::Intersection, vec3::Vec3, rgb::{RGB, RGBA_tuple}};
 
 #[wasm_bindgen]
 pub struct Scene {
@@ -64,7 +64,7 @@ impl Scene {
         return Vec3::new(0.0, 0.0, 0.0);
     }
 
-    pub fn render(&self) -> String {
+    pub fn render(&self) -> Vec<u16> {
         let half_width: u32 = self.width / 2;
         let half_height: u32 = self.height / 2;
 
@@ -88,7 +88,7 @@ impl Scene {
                     })
                     .normalize();
 
-                    let res = Self::trace(origin, direction, &self.entities, 4);
+                    let res = Self::trace(origin, direction, &self.entities, self.bounces);
                     samples[x as usize][y as usize].push(res);
                     //let colour = Vec3::avg(&samples[x as usize][y as usize]);
 
@@ -97,6 +97,26 @@ impl Scene {
             }
         }
 
-        "Rendering".to_string()
+        todo!("returned rendered pixles")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_render() {
+        let scene = Scene {
+            entities: vec![],
+            width: 10,
+            height: 10,
+            focal_length: 50,
+            samples: 10,
+            bounces: 4,
+        };
+        let rendered = scene.render();
+
+        assert_eq!(rendered, vec![0;(scene.width * scene.height * 4) as usize]);
     }
 }

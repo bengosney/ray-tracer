@@ -2,6 +2,8 @@ use wasm_bindgen::prelude::*;
 
 use crate::vec3::Vec3;
 
+pub type RGBA_tuple = (u16, u16, u16, u16);
+
 #[wasm_bindgen()]
 #[derive(Copy, Clone, PartialEq)]
 pub struct RGB {
