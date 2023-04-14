@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-use crate::{entity::Entity, intersection::Intersection, vec3::Vec3, rgb::{RGB, RGBA_tuple}};
+use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
 #[wasm_bindgen]
 pub struct Scene {
@@ -89,7 +89,7 @@ impl Scene {
                     .normalize();
 
                     let res = Self::trace(origin, direction, &self.entities, self.bounces);
-                    samples[x as usize][y as usize].push(res);
+                    samples[i as usize][j as usize].push(res);
                     //let colour = Vec3::avg(&samples[x as usize][y as usize]);
 
                     //drawPixel({ x: i, y: j }, vec3ToRGB(colour));
