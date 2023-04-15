@@ -83,7 +83,7 @@ impl Scene {
                 pixels.push(sample.x as u32);
                 pixels.push(sample.y as u32);
                 pixels.push(sample.z as u32);
-                pixels.push(255 as u32);
+                pixels.push(255);
             }
         }
 
@@ -100,9 +100,10 @@ impl Scene {
             z: 0.0,
         };
         let mut samples: Vec<Vec<Vec<Vec3>>> =
-            vec![vec![vec![]; self.height as usize]; self.width as usize];
+            vec![vec![vec![]; self.width as usize]; self.height as usize];
 
-        for _ in 0..self.samples {
+        for pass in 0..self.samples {
+            log(&format!("Pass {}", pass));
             for i in 0..self.width as i32 {
                 for j in 0..self.height as i32 {
                     let x: i32 = i - half_width;
@@ -116,11 +117,7 @@ impl Scene {
 
                     let res = Self::trace(origin, direction, self.entities.clone(), self.bounces);
 
-                    if i == half_width && j == 50 {
-                        log(&format!("{}:{} {}, {}, {}", i, j, res.x, res.y, res.z));
-                    }
-
-                    samples[i as usize][j as usize].push(res);
+                    samples[j as usize][i as usize].push(res);
                 }
             }
         }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import Canvas from "./Canvas";
 import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
-import { Vec2, Vec3, add, vec3, normalize, mul, sub, mag, dot, reflect, mulParts, avg } from "./utils/math";
+import { Vec2, Vec3, add, vec3, normalize, mul, sub, mag, dot, reflect, mulParts, avg, vec2 } from "./utils/math";
 import { RGB, rgb, rgbToVec3, vec3ToRGB } from "./utils/colour";
 
 import initWASM, { Scene, Entity, Shape as wasmShape, Vec3 as wasmVec3, RGB as wasmRGB } from "wasm-lib";
@@ -207,7 +207,7 @@ const render = (
           samples[x][y].push(trace(origin, direction, objects, bounces));
           const colour = avg(samples[x][y]);
 
-          drawPixel({ x: i, y: j }, vec3ToRGB(colour));
+          //drawPixel({ x: i, y: j }, vec3ToRGB(colour));
         }
       }
       finish();
@@ -233,9 +233,9 @@ function App() {
   const addSampleFinished = () => setSamplesFinished((s) => s + 1);
 
   useEffect(() => {
-    if (ready) {
+    if (imageData.current) {
       initWASM().then(() => {
-        const scene = new Scene(320, 240, 50, 1, 4);
+        const scene = new Scene(320, 240, 50, 10, 4);
         objects.forEach((o) => {
           const entity = new Entity(
             wasmShape.Sphere,
@@ -247,9 +247,8 @@ function App() {
           );
           scene.add_entity(entity);
         });
-        console.log("stating render");
+
         const pixels = scene.render();
-        console.log("scene", pixels);
         if (imageData.current !== undefined) {
           for (let i = 0; i < pixels.length; i++) {
             imageData.current.data[i] = pixels[i];
@@ -257,7 +256,7 @@ function App() {
         }
       });
     }
-  }, [ready]);
+  }, [ready, imageData.current]);
 
   const drawPixel = useCallback(
     ({ x, y }: Vec2, colour: RGB) => {
@@ -298,8 +297,7 @@ function App() {
 
   return (
     <div className="App">
-      {samplesStarted > samplesFinished ? <div>Rendering</div> : null}
-      <Canvas animating={samplesStarted > samplesFinished} width={width} height={height} init={init} frame={frame} />
+      <Canvas animating={true} width={width} height={height} init={init} frame={frame} />
     </div>
   );
 }
