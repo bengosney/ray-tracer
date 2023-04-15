@@ -5,7 +5,6 @@ mod scene;
 mod vec2;
 mod vec3;
 
-
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

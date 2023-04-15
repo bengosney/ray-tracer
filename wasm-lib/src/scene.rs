@@ -50,38 +50,42 @@ impl Scene {
         self.entities.push(entity);
     }
 
-    fn intersection(origin: Vec3, direction: Vec3, entities: Vec<Entity>) -> Intersection {
-        entities
+    fn intersection(origin: Vec3, direction: Vec3, entities: Vec<Entity>) -> Option<Intersection> {
+        let intersection = entities
             .iter()
             .fold(Intersection::empty(), |previous, entity| {
                 match entity.intersection(origin, direction) {
                     Some(intersection) => Intersection::closest(intersection, previous),
                     None => previous,
                 }
-            })
+            });
+
+        match intersection {
+            Intersection { entity: None, .. } => None,
+            intersection => Some(intersection),
+        }
     }
 
     fn trace(origin: Vec3, direction: Vec3, entities: Vec<Entity>, steps: u32) -> Vec3 {
-        let intersect = Self::intersection(origin, direction, entities.clone());
+        match Self::intersection(origin, direction, entities.clone()) {
+            Some(intersection) if steps > 0 => {
+                let reflected_direction = direction.reflect(intersection.normal);
+                let entity = intersection.entity.unwrap();
 
-        if intersect.collided && steps > 0 {
-            let reflected_direction = direction.reflect(intersect.normal);
-            let entity = intersect.entity.unwrap();
+                let filtered_entities: Vec<Entity> =
+                    entities.into_iter().filter(|e| e != &entity).collect();
 
-            let filtered_entities: Vec<Entity> =
-                entities.into_iter().filter(|e| e != &entity).collect();
+                let bounce = Self::trace(
+                    intersection.point,
+                    reflected_direction,
+                    filtered_entities,
+                    steps - 1,
+                );
 
-            let bounce = Self::trace(
-                intersect.point,
-                reflected_direction,
-                filtered_entities,
-                steps - 1,
-            );
-
-            return Vec3::from(entity.emission) + (bounce * Vec3::from(entity.reflectivity));
+                return Vec3::from(entity.emission) + (bounce * Vec3::from(entity.reflectivity));
+            }
+            _ => Vec3::new(0.0, 0.0, 0.0),
         }
-
-        return Vec3::new(0.0, 0.0, 0.0);
     }
 
     fn samples_to_pixel_map(samples: &Vec<Vec<Vec<Vec3>>>) -> Vec<u8> {

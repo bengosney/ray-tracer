@@ -1,3 +1,4 @@
+use rand::Rng;
 use wasm_bindgen::prelude::*;
 
 use std::ops::Add;
@@ -44,6 +45,16 @@ impl Vec3 {
             .iter()
             .fold(Vec3::new(0.0, 0.0, 0.0), |sum, &val| sum + val)
             * (1.0 / vectors.len() as f32)
+    }
+
+    pub fn rng() -> Self {
+        let mut rng = rand::thread_rng();
+
+        Vec3::new(
+            rng.gen_range(-0.5..0.5),
+            rng.gen_range(-0.5..0.5),
+            rng.gen_range(-0.5..0.5),
+        )
     }
 }
 

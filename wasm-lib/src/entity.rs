@@ -1,4 +1,3 @@
-use rand::Rng;
 use wasm_bindgen::prelude::*;
 
 use crate::{intersection::Intersection, rgb::RGB, vec3::Vec3};
@@ -30,8 +29,6 @@ impl Entity {
     }
 
     fn sphere_intersection(self, origin: Vec3, direction: Vec3) -> Option<Intersection> {
-        let mut rng = rand::thread_rng();
-
         let sphere_ray = self.position - origin;
         let dist_sphere_ray = sphere_ray.mag();
         let dist_to_closest_point_on_ray = sphere_ray.dot(direction);
@@ -43,16 +40,11 @@ impl Entity {
                 .abs()
                 .sqrt();
         let point = origin + (direction * dist_to_intersection);
-        let roughness = Vec3::new(
-            rng.gen_range(-0.5..0.5),
-            rng.gen_range(-0.5..0.5),
-            rng.gen_range(-0.5..0.5),
-        ) * self.roughness;
+        let roughness = Vec3::rng() * self.roughness;
         let normal = (point - self.position).normalize() + roughness;
 
         if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
             return Some(Intersection {
-                collided: true,
                 dist: dist_to_intersection,
                 point: point,
                 normal: normal,
