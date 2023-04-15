@@ -1,4 +1,7 @@
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::Clamped;
+use web_sys::{CanvasRenderingContext2d, ImageData};
+
 
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
@@ -73,16 +76,16 @@ impl Scene {
         return Vec3::new(0.0, 0.0, 0.0);
     }
 
-    fn samples_to_pixel_map(samples: Vec<Vec<Vec<Vec3>>>) -> Vec<u32> {
-        let mut pixels: Vec<u32> = vec![];
+    fn samples_to_pixel_map(samples: &Vec<Vec<Vec<Vec3>>>) -> Vec<u8> {
+        let mut pixels: Vec<u8> = vec![];
 
         for row in samples {
             for sample_group in row {
                 let sample = Vec3::avg(&sample_group);
 
-                pixels.push(sample.x as u32);
-                pixels.push(sample.y as u32);
-                pixels.push(sample.z as u32);
+                pixels.push(sample.x as u8);
+                pixels.push(sample.y as u8);
+                pixels.push(sample.z as u8);
                 pixels.push(255);
             }
         }
@@ -90,7 +93,7 @@ impl Scene {
         return pixels;
     }
 
-    pub fn render(&self) -> Vec<u32> {
+    pub fn render(&self, ctx: &CanvasRenderingContext2d) {
         let half_width: i32 = (self.width / 2) as i32;
         let half_height: i32 = (self.height / 2) as i32;
 
@@ -120,28 +123,10 @@ impl Scene {
                     samples[j as usize][i as usize].push(res);
                 }
             }
+            let mut data = Scene::samples_to_pixel_map(&samples);
+            let data_result = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), self.width, self.height);
+            let data = data_result.unwrap();
+            ctx.put_image_data(&data, 0.0, 0.0);
         }
-
-        return Scene::samples_to_pixel_map(samples);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_render() {
-        let scene = Scene {
-            entities: vec![],
-            width: 10,
-            height: 10,
-            focal_length: 50,
-            samples: 10,
-            bounces: 4,
-        };
-        let rendered = scene.render();
-
-        assert_eq!(rendered, vec![0; (scene.width * scene.height * 4) as usize]);
     }
 }
