@@ -22,14 +22,14 @@ pub struct Entity {
 }
 
 impl Entity {
-    pub fn intersection(self, origin: Vec3, direction: Vec3) -> Intersection {
+    pub fn intersection(self, origin: Vec3, direction: Vec3) -> Option<Intersection> {
         match self.shape {
             Shape::Sphere => self.sphere_intersection(origin, direction),
             Shape::Cube => todo!("Cube intersection"),
         }
     }
 
-    fn sphere_intersection(self, origin: Vec3, direction: Vec3) -> Intersection {
+    fn sphere_intersection(self, origin: Vec3, direction: Vec3) -> Option<Intersection> {
         let mut rng = rand::thread_rng();
 
         let sphere_ray = self.position - origin;
@@ -51,16 +51,16 @@ impl Entity {
         let normal = (point - self.position).normalize() + roughness;
 
         if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
-            return Intersection {
+            return Some(Intersection {
                 collided: true,
                 dist: dist_to_intersection,
                 point: point,
                 normal: normal,
                 entity: Some(self),
-            };
+            });
         }
 
-        Intersection::empty()
+        None
     }
 }
 

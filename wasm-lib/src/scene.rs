@@ -1,8 +1,8 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
@@ -51,16 +51,14 @@ impl Scene {
     }
 
     fn intersection(origin: Vec3, direction: Vec3, entities: Vec<Entity>) -> Intersection {
-        let mut closest_intersection: Intersection = Intersection::empty();
-
-        for entity in entities {
-            let intersection = entity.intersection(origin, direction);
-            if intersection.dist < closest_intersection.dist {
-                closest_intersection = intersection;
-            }
-        }
-
-        return closest_intersection;
+        entities
+            .iter()
+            .fold(Intersection::empty(), |previous, entity| {
+                match entity.intersection(origin, direction) {
+                    Some(intersection) => Intersection::closest(intersection, previous),
+                    None => previous,
+                }
+            })
     }
 
     fn trace(origin: Vec3, direction: Vec3, entities: Vec<Entity>, steps: u32) -> Vec3 {
@@ -70,9 +68,8 @@ impl Scene {
             let reflected_direction = direction.reflect(intersect.normal);
             let entity = intersect.entity.unwrap();
 
-            let filtered_entities: Vec<Entity> = entities.into_iter()
-                .filter(|e| e != &entity)
-                .collect();
+            let filtered_entities: Vec<Entity> =
+                entities.into_iter().filter(|e| e != &entity).collect();
 
             let bounce = Self::trace(
                 intersect.point,
@@ -125,7 +122,6 @@ impl Scene {
         let mut samples: Vec<Vec<Vec<Vec3>>> =
             vec![vec![vec![]; self.width as usize]; self.height as usize];
 
-
         let f = Rc::new(RefCell::new(None));
         let g = f.clone();
         let mut i = 0;
@@ -153,12 +149,13 @@ impl Scene {
             }
 
             let mut data = Scene::samples_to_pixel_map(&samples);
-            let image_data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height).unwrap();
+            let image_data =
+                ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)
+                    .unwrap();
             local_context.put_image_data(&image_data, 0.0, 0.0).ok();
 
             i += 1;
             request_animation_frame(f.borrow().as_ref().unwrap());
-
         }) as Box<dyn FnMut()>));
 
         request_animation_frame(g.borrow().as_ref().unwrap());

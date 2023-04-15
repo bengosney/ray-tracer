@@ -18,4 +18,11 @@ impl Intersection {
             entity: None,
         }
     }
+
+    pub fn closest(a: Self, b: Self) -> Self {
+        match a.dist < b.dist {
+            true => a,
+            false => b,
+        }
+    }
 }
