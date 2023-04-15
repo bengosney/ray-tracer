@@ -94,7 +94,7 @@ function App() {
   const width = 320;
   const height = 240;
   const focalLength = 50;
-  const samples = 3;
+  const samples = 100;
   const bounces = 4;
   const [context, setContext] = useState<CanvasRenderingContext2D>();
 
