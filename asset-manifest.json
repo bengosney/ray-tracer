@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/ray-tracer/static/css/main.18924f1f.css",
+    "main.js": "/ray-tracer/static/js/main.736c732d.js",
+    "static/js/787.e13c6cf7.chunk.js": "/ray-tracer/static/js/787.e13c6cf7.chunk.js",
+    "static/media/wasm_lib_bg.wasm": "/ray-tracer/static/media/wasm_lib_bg.00277c072db2b6a7b851.wasm",
+    "index.html": "/ray-tracer/index.html",
+    "main.18924f1f.css.map": "/ray-tracer/static/css/main.18924f1f.css.map",
+    "main.736c732d.js.map": "/ray-tracer/static/js/main.736c732d.js.map",
+    "787.e13c6cf7.chunk.js.map": "/ray-tracer/static/js/787.e13c6cf7.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.18924f1f.css",
+    "static/js/main.736c732d.js"
+  ]
+}
