@@ -84,7 +84,7 @@ impl Scene {
 
                 return Vec3::from(entity.emission) + (bounce * Vec3::from(entity.reflectivity));
             }
-            _ => Vec3::new(0.0, 0.0, 0.0),
+            _ => Vec3::zero(),
         }
     }
 

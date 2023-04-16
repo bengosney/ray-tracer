@@ -22,6 +22,10 @@ impl Vec3 {
         Vec3 { x: x, y: y, z: z }
     }
 
+    pub fn zero() -> Self {
+        Vec3 { x: 0.0, y: 0.0, z: 0.0 }
+    }
+
     pub fn mag(&self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
@@ -43,7 +47,7 @@ impl Vec3 {
     pub fn avg(vectors: &Vec<Vec3>) -> Self {
         vectors
             .iter()
-            .fold(Vec3::new(0.0, 0.0, 0.0), |sum, &val| sum + val)
+            .fold(Vec3::zero(), |sum, &val| sum + val)
             * (1.0 / vectors.len() as f32)
     }
 

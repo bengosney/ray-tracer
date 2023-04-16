@@ -10,9 +10,9 @@ pub struct Intersection {
 impl Intersection {
     pub fn empty() -> Self {
         Intersection {
-            point: Vec3::new(0.0, 0.0, 0.0),
+            point: Vec3::zero(),
             dist: f32::INFINITY,
-            normal: Vec3::new(0.0, 0.0, 0.0),
+            normal: Vec3::zero(),
             entity: None,
         }
     }
