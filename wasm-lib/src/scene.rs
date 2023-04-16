@@ -89,20 +89,16 @@ impl Scene {
     }
 
     fn samples_to_pixel_map(samples: &Vec<Vec<Vec<Vec3>>>) -> Vec<u8> {
-        let mut pixels: Vec<u8> = vec![];
-
-        for row in samples {
-            for sample_group in row {
-                let sample = Vec3::avg(&sample_group);
-
-                pixels.push(sample.x as u8);
-                pixels.push(sample.y as u8);
-                pixels.push(sample.z as u8);
-                pixels.push(255);
-            }
-        }
-
-        return pixels;
+        samples.iter().fold(Vec::new(), |acc: Vec<u8>, row| {
+            [
+                acc,
+                row.iter()
+                    .map(|sample_group| Vec3::avg(&sample_group))
+                    .map(|sample| vec![sample.x as u8, sample.y as u8, sample.z as u8, 255])
+                    .fold(Vec::new(), |acc: Vec<u8>, sample| [acc, sample].concat()),
+            ]
+            .concat()
+        })
     }
 
     pub fn render(&self, ctx: &CanvasRenderingContext2d) {
