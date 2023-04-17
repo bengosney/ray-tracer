@@ -1,10 +1,7 @@
 use rand::Rng;
 use wasm_bindgen::prelude::*;
 
-use std::ops::Add;
-use std::ops::Mul;
-use std::ops::Sub;
-use std::ops::Div;
+use std::ops::{Add, Mul, Sub, Div};
 
 use crate::rgb::RGB;
 
@@ -53,10 +50,6 @@ impl Vec3 {
 
     pub fn reflect(&self, normal: Self) -> Self {
         *self - (normal * self.dot(normal))
-    }
-
-    pub fn unit_vector(&self) -> Vec3 {
-        *self / self.mag()
     }
 }
 
