@@ -4,6 +4,7 @@ use wasm_bindgen::prelude::*;
 use std::ops::Add;
 use std::ops::Mul;
 use std::ops::Sub;
+use std::ops::Div;
 
 use crate::rgb::RGB;
 
@@ -52,6 +53,10 @@ impl Vec3 {
 
     pub fn reflect(&self, normal: Self) -> Self {
         *self - (normal * self.dot(normal))
+    }
+
+    pub fn unit_vector(&self) -> Vec3 {
+        *self / self.mag()
     }
 }
 
@@ -153,6 +158,30 @@ impl Mul<f32> for Vec3 {
     }
 }
 
+impl Div<Vec3> for Vec3 {
+    type Output = Self;
+
+    fn div(self, rhs: Vec3) -> Self::Output {
+        Vec3 {
+            x: self.x / rhs.x,
+            y: self.y / rhs.y,
+            z: self.z / rhs.z,
+        }
+    }
+}
+
+impl Div<f32> for Vec3 {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Vec3 {
+            x: self.x / rhs,
+            y: self.y / rhs,
+            z: self.z / rhs,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -203,6 +232,21 @@ mod tests {
         let b = 2.0;
 
         assert_eq!(a * b, Vec3::new(2.0, 4.0, 6.0));
+    }
+    #[test]
+    fn test_div_vec3() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = Vec3::new(2.0, 2.0, 2.0);
+
+        assert_eq!(a / b, Vec3::new(0.5, 1.0, 1.5));
+    }
+
+    #[test]
+    fn test_div_f32() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = 2.0;
+
+        assert_eq!(a / b, Vec3::new(0.5, 1.0, 1.5));
     }
 
     #[test]
