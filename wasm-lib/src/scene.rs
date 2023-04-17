@@ -5,6 +5,7 @@ use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
 use crate::rgb::RGB;
+use crate::vec3::Ray;
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
 #[wasm_bindgen]
@@ -37,7 +38,14 @@ pub struct Scene {
 #[wasm_bindgen]
 impl Scene {
     #[wasm_bindgen(constructor)]
-    pub fn new(width: u32, height: u32, focal_length: u32, samples: u32, bounces: u32 , background: RGB) -> Self {
+    pub fn new(
+        width: u32,
+        height: u32,
+        focal_length: u32,
+        samples: u32,
+        bounces: u32,
+        background: RGB,
+    ) -> Self {
         Self {
             entities: vec![],
             width,
@@ -53,11 +61,11 @@ impl Scene {
         self.entities.push(entity);
     }
 
-    fn intersection(origin: Vec3, direction: Vec3, entities: Vec<Entity>) -> Option<Intersection> {
+    fn intersection(ray: Ray, entities: Vec<Entity>) -> Option<Intersection> {
         let intersection = entities
             .iter()
             .fold(Intersection::empty(), |previous, entity| {
-                match entity.intersection(origin, direction) {
+                match entity.intersection(ray.clone()) {
                     Some(intersection) => Intersection::closest(intersection, previous),
                     None => previous,
                 }
@@ -69,22 +77,24 @@ impl Scene {
         }
     }
 
-    fn trace(origin: Vec3, direction: Vec3, entities: Vec<Entity>, background: Vec3, steps: u32) -> Vec3 {
-        match Self::intersection(origin, direction, entities.clone()) {
+    fn trace(ray: Ray, entities: Vec<Entity>, background: Vec3, steps: u32) -> Vec3 {
+        match Self::intersection(ray, entities.clone()) {
             Some(intersection) if steps > 0 => {
-                let reflected_direction: Vec3 = direction.reflect(intersection.normal);
+                let reflected_direction: Vec3 = ray.direction.reflect(intersection.normal);
                 let entity: Entity = intersection.entity.unwrap();
 
                 let bounce = Self::trace(
-                    intersection.point,
-                    reflected_direction,
+                    Ray {
+                        origin: intersection.point,
+                        direction: reflected_direction,
+                    },
                     entities,
                     background,
                     steps - 1,
                 );
 
                 let material = entity.material();
-                return Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity));
+                Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
             }
             _ => background,
         }
@@ -113,7 +123,7 @@ impl Scene {
         let bounces = self.bounces;
         let entities = self.entities.clone();
         let sample_count = self.samples;
-        let background= self.background;
+        let background = self.background;
 
         let local_context = ctx.clone();
 
@@ -142,7 +152,12 @@ impl Scene {
                     })
                     .normalize();
 
-                    let res = Self::trace(origin, direction, entities.clone(), background, bounces);
+                    let res = Self::trace(
+                        Ray { origin, direction },
+                        entities.clone(),
+                        background,
+                        bounces,
+                    );
                     samples[j as usize][i as usize].push(res);
                 }
             }

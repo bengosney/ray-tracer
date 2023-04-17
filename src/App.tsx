@@ -28,9 +28,9 @@ interface Cube extends Object {
 
 type Objects = Sphere; // | Cube;
 
-type Sceen = Array<Objects>;
+type SceneObjects = Array<Objects>;
 
-const objects: Sceen = [
+const objects: SceneObjects = [
   {
     shape: "sphere",
     position: vec3(1000, 0, 0),
@@ -91,12 +91,23 @@ const objects: Sceen = [
 
 function App() {
   //const { width, height } = useMaxSize(ASPECT_4_3);
-  const width = 320;
-  const height = 240;
+  const width = 320 * 2;
+  const height = 240 * 2;
   const focalLength = 50;
-  const samples = 100;
+  const samples = 1;
   const bounces = 4;
   const [context, setContext] = useState<CanvasRenderingContext2D>();
+
+  const sceneObjects: SceneObjects = [
+    {
+      shape: "sphere",
+      radius: 7,
+      position: vec3(0, 0, 10),
+      emission: rgb(255, 0, 255),
+      reflectivity: rgb(1, 1, 1),
+      roughness: 0,
+    },
+  ];
 
   useEffect(() => {
     if (context) {
@@ -107,9 +118,10 @@ function App() {
           focalLength,
           samples,
           bounces,
-          new wasmRGB(253, 244, 220),
+          new wasmRGB(0, 0, 0),
+          //new wasmRGB(253, 244, 220),
         );
-        objects.forEach((o) => {
+        sceneObjects.forEach((o) => {
           const entity = new Entity(
             new wasmVec3(o.position.x, o.position.y, o.position.z),
             new wasmRGB(o.emission.r, o.emission.g, o.emission.b),
@@ -131,14 +143,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas
-        animating={false}
-        width={width}
-        height={height}
-        style={{ width: `${width * 2}px`, height: `${height * 2}px` }}
-        init={init}
-        frame={() => {}}
-      />
+      <Canvas animating={false} width={width} height={height} init={init} frame={() => {}} />
     </div>
   );
 }
