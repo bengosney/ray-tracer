@@ -69,8 +69,8 @@ impl Scene {
     fn trace(origin: Vec3, direction: Vec3, entities: Vec<Entity>, steps: u32) -> Vec3 {
         match Self::intersection(origin, direction, entities.clone()) {
             Some(intersection) if steps > 0 => {
-                let reflected_direction = direction.reflect(intersection.normal);
-                let entity = intersection.entity.unwrap();
+                let reflected_direction: Vec3 = direction.reflect(intersection.normal);
+                let entity: Entity = intersection.entity.unwrap();
 
                 let filtered_entities: Vec<Entity> =
                     entities.into_iter().filter(|e| e != &entity).collect();
@@ -82,7 +82,8 @@ impl Scene {
                     steps - 1,
                 );
 
-                return Vec3::from(entity.emission) + (bounce * Vec3::from(entity.reflectivity));
+                let material = entity.material();
+                return Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity));
             }
             _ => Vec3::zero(),
         }
@@ -114,11 +115,7 @@ impl Scene {
 
         let local_context = ctx.clone();
 
-        let origin: Vec3 = Vec3 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        };
+        let origin: Vec3 = Vec3::zero();
         let mut samples: Vec<Vec<Vec<Vec3>>> =
             vec![vec![vec![]; self.width as usize]; self.height as usize];
 

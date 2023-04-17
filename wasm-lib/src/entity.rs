@@ -2,33 +2,34 @@ use wasm_bindgen::prelude::*;
 
 use crate::{intersection::Intersection, rgb::RGB, vec3::Vec3};
 
-#[wasm_bindgen]
-#[derive(Copy, Clone, PartialEq)]
-pub enum Shape {
-    Sphere,
-    Cube,
+pub trait Intersectable {
+    fn intersection(self, origin: Vec3, direction: Vec3) -> Option<Intersection>;
 }
 
 #[wasm_bindgen()]
 #[derive(Copy, Clone, PartialEq)]
 pub struct Entity {
-    pub shape: Shape,
-    pub position: Vec3,
+    position: Vec3,
+    radius: f32,
+    material: Material,
+}
+
+#[wasm_bindgen()]
+#[derive(Copy, Clone, PartialEq)]
+pub struct Shape {
+
+}
+
+#[wasm_bindgen()]
+#[derive(Copy, Clone, PartialEq)]
+pub struct Material {
     pub emission: RGB,
     pub reflectivity: RGB,
     pub roughness: f32,
-    pub radius: f32,
 }
 
 impl Entity {
     pub fn intersection(self, origin: Vec3, direction: Vec3) -> Option<Intersection> {
-        match self.shape {
-            Shape::Sphere => self.sphere_intersection(origin, direction),
-            Shape::Cube => todo!("Cube intersection"),
-        }
-    }
-
-    fn sphere_intersection(self, origin: Vec3, direction: Vec3) -> Option<Intersection> {
         let sphere_ray = self.position - origin;
         let dist_sphere_ray = sphere_ray.mag();
         let dist_to_closest_point_on_ray = sphere_ray.dot(direction);
@@ -40,7 +41,7 @@ impl Entity {
                 .abs()
                 .sqrt();
         let point = origin + (direction * dist_to_intersection);
-        let roughness = Vec3::rng() * self.roughness;
+        let roughness = Vec3::rng() * self.material.roughness;
         let normal = (point - self.position).normalize() + roughness;
 
         if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
@@ -54,13 +55,16 @@ impl Entity {
 
         None
     }
+
+    pub fn material(self) -> Material {
+        self.material
+    }
 }
 
 #[wasm_bindgen]
 impl Entity {
     #[wasm_bindgen(constructor)]
     pub fn new(
-        shape: Shape,
         position: Vec3,
         emission: RGB,
         reflectivity: RGB,
@@ -68,12 +72,13 @@ impl Entity {
         radius: f32,
     ) -> Self {
         Self {
-            shape,
             position,
-            emission,
-            reflectivity,
-            roughness,
             radius,
+            material: Material {
+                emission,
+                reflectivity,
+                roughness,
+            },
         }
     }
 }
