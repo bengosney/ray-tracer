@@ -1,6 +1,10 @@
 use wasm_bindgen::prelude::*;
 
-use crate::{intersection::Intersection, rgb::RGB, vec3::{Vec3, Ray}};
+use crate::{
+    intersection::Intersection,
+    rgb::RGB,
+    vec3::{Ray, Vec3},
+};
 
 pub trait Intersectable {
     fn intersection(self, origin: Vec3, direction: Vec3) -> Option<Intersection>;

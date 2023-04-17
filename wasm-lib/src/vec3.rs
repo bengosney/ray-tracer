@@ -1,8 +1,8 @@
 use rand::Rng;
 use wasm_bindgen::prelude::*;
 
-use std::ops::{Add, Mul, Sub, Div};
 use std::fmt::Display;
+use std::ops::{Add, Div, Mul, Sub};
 
 use crate::rgb::RGB;
 
