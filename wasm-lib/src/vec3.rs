@@ -23,7 +23,11 @@ impl Vec3 {
     }
 
     pub fn zero() -> Self {
-        Vec3 { x: 0.0, y: 0.0, z: 0.0 }
+        Vec3 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        }
     }
 
     pub fn mag(&self) -> f32 {
@@ -32,6 +36,14 @@ impl Vec3 {
 
     pub fn dot(&self, rhs: Self) -> f32 {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
+    }
+
+    pub fn cross(&self, rhs: Self) -> Vec3 {
+        Vec3 {
+            x: (self.y * rhs.z) - (self.z * rhs.y),
+            y: (self.z * rhs.x) - (self.x * rhs.z),
+            z: (self.x * rhs.y) - (self.y * rhs.x),
+        }
     }
 
     pub fn normalize(self) -> Self {
@@ -45,10 +57,7 @@ impl Vec3 {
 
 impl Vec3 {
     pub fn avg(vectors: &Vec<Vec3>) -> Self {
-        vectors
-            .iter()
-            .fold(Vec3::zero(), |sum, &val| sum + val)
-            * (1.0 / vectors.len() as f32)
+        vectors.iter().fold(Vec3::zero(), |sum, &val| sum + val) * (1.0 / vectors.len() as f32)
     }
 
     pub fn rng() -> Self {
@@ -209,6 +218,14 @@ mod tests {
         let b = Vec3::new(2.0, 2.0, 2.0);
 
         assert_eq!(a.dot(b), 12.0);
+    }
+
+    #[test]
+    fn test_cross() {
+        let a = Vec3::new(2.0, 3.0, 4.0);
+        let b = Vec3::new(5.0, 6.0, 7.0);
+
+        assert_eq!(a.cross(b), Vec3::new(-3.0, 6.0, -3.0));
     }
 
     #[test]
