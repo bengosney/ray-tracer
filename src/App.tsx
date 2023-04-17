@@ -36,7 +36,7 @@ const objects: Sceen = [
     position: vec3(1000, 0, 0),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.8, 0, 0),
+    reflectivity: rgb(0.5, 0, 0),
     roughness: 10,
   },
   {
@@ -44,7 +44,7 @@ const objects: Sceen = [
     position: vec3(-1000, 0, 0),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0, 0.8, 0),
+    reflectivity: rgb(0, 0.5, 0),
     roughness: 3,
   },
   {
@@ -52,7 +52,7 @@ const objects: Sceen = [
     position: vec3(0, 1000, 0),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.8, 0.8, 0.8),
+    reflectivity: rgb(0.5, 0.5, 0.5),
     roughness: 3,
   },
   {
@@ -60,7 +60,7 @@ const objects: Sceen = [
     position: vec3(0, -1000, 0),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.8, 0.8, 0.8),
+    reflectivity: rgb(0.5, 0.5, 0.5),
     roughness: 3,
   },
   {
@@ -68,7 +68,7 @@ const objects: Sceen = [
     position: vec3(0, 0, 1000),
     radius: 990,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.8, 0.8, 0.8),
+    reflectivity: rgb(0.5, 0.5, 0.5),
     roughness: 3,
   },
   {
@@ -76,15 +76,15 @@ const objects: Sceen = [
     position: vec3(0, -14.5, 7),
     radius: 5,
     emission: rgb(5550, 5550, 5550),
-    reflectivity: rgb(0.8, 0.8, 0.8),
-    roughness: 3,
+    reflectivity: rgb(0.5, 0.5, 0.5),
+    roughness: 0,
   },
   {
     shape: "sphere",
     position: vec3(3, 7, 7),
     radius: 3,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.8, 0.8, 0.8),
+    reflectivity: rgb(1, 1, 1),
     roughness: 0,
   },
 ];
@@ -94,17 +94,23 @@ function App() {
   const width = 320;
   const height = 240;
   const focalLength = 50;
-  const samples = 10;
+  const samples = 100;
   const bounces = 4;
   const [context, setContext] = useState<CanvasRenderingContext2D>();
 
   useEffect(() => {
     if (context) {
       initWASM().then(() => {
-        const scene = new Scene(context.canvas.width, context.canvas.height, focalLength, samples, bounces);
+        const scene = new Scene(
+          context.canvas.width,
+          context.canvas.height,
+          focalLength,
+          samples,
+          bounces,
+          new wasmRGB(253, 244, 220),
+        );
         objects.forEach((o) => {
           const entity = new Entity(
-            wasmShape.Sphere,
             new wasmVec3(o.position.x, o.position.y, o.position.z),
             new wasmRGB(o.emission.r, o.emission.g, o.emission.b),
             new wasmRGB(o.reflectivity.r, o.reflectivity.g, o.reflectivity.b),
@@ -125,7 +131,14 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas animating={false} width={width} height={height} init={init} frame={() => {}} />
+      <Canvas
+        animating={false}
+        width={width}
+        height={height}
+        style={{ width: `${width * 2}px`, height: `${height * 2}px` }}
+        init={init}
+        frame={() => {}}
+      />
     </div>
   );
 }

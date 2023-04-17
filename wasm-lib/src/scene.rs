@@ -4,6 +4,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
+use crate::rgb::RGB;
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
 #[wasm_bindgen]
@@ -30,12 +31,13 @@ pub struct Scene {
     pub focal_length: u32,
     pub samples: u32,
     pub bounces: u32,
+    pub background: Vec3,
 }
 
 #[wasm_bindgen]
 impl Scene {
     #[wasm_bindgen(constructor)]
-    pub fn new(width: u32, height: u32, focal_length: u32, samples: u32, bounces: u32) -> Self {
+    pub fn new(width: u32, height: u32, focal_length: u32, samples: u32, bounces: u32 , background: RGB) -> Self {
         Self {
             entities: vec![],
             width,
@@ -43,6 +45,7 @@ impl Scene {
             focal_length,
             samples,
             bounces,
+            background: background.into(),
         }
     }
 
@@ -66,26 +69,24 @@ impl Scene {
         }
     }
 
-    fn trace(origin: Vec3, direction: Vec3, entities: Vec<Entity>, steps: u32) -> Vec3 {
+    fn trace(origin: Vec3, direction: Vec3, entities: Vec<Entity>, background: Vec3, steps: u32) -> Vec3 {
         match Self::intersection(origin, direction, entities.clone()) {
             Some(intersection) if steps > 0 => {
                 let reflected_direction: Vec3 = direction.reflect(intersection.normal);
                 let entity: Entity = intersection.entity.unwrap();
 
-                let filtered_entities: Vec<Entity> =
-                    entities.into_iter().filter(|e| e != &entity).collect();
-
                 let bounce = Self::trace(
                     intersection.point,
                     reflected_direction,
-                    filtered_entities,
+                    entities,
+                    background,
                     steps - 1,
                 );
 
                 let material = entity.material();
                 return Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity));
             }
-            _ => Vec3::zero(),
+            _ => background,
         }
     }
 
@@ -112,6 +113,7 @@ impl Scene {
         let bounces = self.bounces;
         let entities = self.entities.clone();
         let sample_count = self.samples;
+        let background= self.background;
 
         let local_context = ctx.clone();
 
@@ -140,7 +142,7 @@ impl Scene {
                     })
                     .normalize();
 
-                    let res = Self::trace(origin, direction, entities.clone(), bounces);
+                    let res = Self::trace(origin, direction, entities.clone(), background, bounces);
                     samples[j as usize][i as usize].push(res);
                 }
             }
