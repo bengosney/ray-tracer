@@ -105,7 +105,7 @@ function App() {
       radius: 8,
       position: vec3(0, 0, 10),
       emission: mat,
-      reflectivity: rgb(1, 1, 1),
+      reflectivity: rgb(0.5, 0.5, 0.5),
       roughness: 0,
     },
     {

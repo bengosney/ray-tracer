@@ -81,7 +81,7 @@ impl Scene {
         match Self::intersection(ray, entities.clone()) {
             Some(intersection) if steps > 0 => {
                 let reflected_direction: Vec3 = ray.direction.reflect(intersection.normal);
-                //let entity: Entity = intersection.entity.unwrap();
+                let entity: Entity = intersection.entity.unwrap();
 
                 let bounce_ray: Ray = Ray {
                     origin: intersection.point,
@@ -90,16 +90,15 @@ impl Scene {
                 let bounce =
                     Self::trace(bounce_ray.defuse_scatter(), entities, background, steps - 1);
 
-                //let material = entity.material();
-                //Vec3::from(material.emission)
+                let material = entity.material();
                 Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
             }
-            Some(intersection) if steps == 0 => {
-                let entity: Entity = intersection.entity.unwrap();
-                let material = entity.material();
-                Vec3::from(material.emission)
+            _ => {
+                let unit_direction: Vec3 = ray.direction.normalize();
+                let t = 0.5 * (unit_direction.y + 1.0);
+
+                (Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t) * 200.0
             }
-            _ => background,
         }
     }
 
