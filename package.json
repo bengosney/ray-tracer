@@ -27,6 +27,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "build:wasm": "cd wasm-lib && wasm-pack build --target web --out-dir pkg",
+    "watch-wasm": "while inotifywait -qr -e close_write wasm-lib/; do npm run build:wasm; touch src/App.tsx; done",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

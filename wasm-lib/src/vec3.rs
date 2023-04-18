@@ -7,6 +7,12 @@ use std::ops::{Add, Div, Mul, Sub};
 use crate::rgb::RGB;
 
 #[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
+}
+
+#[wasm_bindgen]
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Vec3 {
     pub x: f32,
@@ -73,6 +79,21 @@ impl Vec3 {
             rng.gen_range(-0.5..0.5),
             rng.gen_range(-0.5..0.5),
         )
+    }
+
+    pub fn rng_normal() -> Self {
+        let mut rng = rand::thread_rng();
+
+        loop {
+            let vec = Vec3::new(
+                rng.gen_range(-1.0..1.0),
+                rng.gen_range(-1.0..1.0),
+                rng.gen_range(-1.0..1.0),
+            );
+            if vec.mag() < 1.0 {
+                return vec;
+            }
+        }
     }
 }
 
@@ -191,6 +212,25 @@ pub struct Ray {
 impl Ray {
     pub fn at(self, distance: f32) -> Vec3 {
         self.origin + (self.direction * distance)
+    }
+
+    pub fn scatter(self, by: f32) -> Self {
+        let scatter = Vec3::rng() * by;
+        Self {
+            origin: self.origin,
+            direction: Vec3 {
+                x: self.direction.x + scatter.x,
+                y: self.direction.y + scatter.y,
+                z: self.direction.z,
+            },
+        }
+    }
+
+    pub fn defuse_scatter(self) -> Self {
+        Self {
+            origin: self.origin,
+            direction: self.direction + Vec3::rng_normal(),
+        }
     }
 }
 

@@ -81,20 +81,23 @@ impl Scene {
         match Self::intersection(ray, entities.clone()) {
             Some(intersection) if steps > 0 => {
                 let reflected_direction: Vec3 = ray.direction.reflect(intersection.normal);
-                let entity: Entity = intersection.entity.unwrap();
+                //let entity: Entity = intersection.entity.unwrap();
 
-                let bounce = Self::trace(
-                    Ray {
-                        origin: intersection.point,
-                        direction: reflected_direction,
-                    },
-                    entities,
-                    background,
-                    steps - 1,
-                );
+                let bounce_ray: Ray = Ray {
+                    origin: intersection.point,
+                    direction: reflected_direction,
+                };
+                let bounce =
+                    Self::trace(bounce_ray.defuse_scatter(), entities, background, steps - 1);
 
-                let material = entity.material();
+                //let material = entity.material();
+                //Vec3::from(material.emission)
                 Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
+            }
+            Some(intersection) if steps == 0 => {
+                let entity: Entity = intersection.entity.unwrap();
+                let material = entity.material();
+                Vec3::from(material.emission)
             }
             _ => background,
         }
@@ -133,26 +136,26 @@ impl Scene {
 
         let f = Rc::new(RefCell::new(None));
         let g = f.clone();
-        let mut i = 0;
+        let mut s = 0;
         *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-            if i > sample_count {
+            if s > sample_count {
                 log("done.");
                 let _ = f.borrow_mut().take();
                 return;
             }
-            log(&format!("Sample {}", i));
+            log(&format!("Sample {}", s));
             for i in 0..width as i32 {
                 for j in 0..height as i32 {
                     let x: i32 = i - half_width;
                     let y: i32 = j - half_height;
-                    let direction = (Vec3 {
+                    let direction: Vec3 = (Vec3 {
                         x: x as f32,
                         y: y as f32,
                         z: focal_length as f32,
                     })
                     .normalize();
 
-                    let res = Self::trace(
+                    let res: Vec3 = Self::trace(
                         Ray { origin, direction },
                         entities.clone(),
                         background,
@@ -162,13 +165,13 @@ impl Scene {
                 }
             }
 
-            let mut data = Scene::samples_to_pixel_map(&samples);
-            let image_data =
+            let mut data: Vec<u8> = Scene::samples_to_pixel_map(&samples);
+            let image_data: ImageData =
                 ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)
                     .unwrap();
             local_context.put_image_data(&image_data, 0.0, 0.0).ok();
 
-            i += 1;
+            s += 1;
             request_animation_frame(f.borrow().as_ref().unwrap());
         }) as Box<dyn FnMut()>));
 

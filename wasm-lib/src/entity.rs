@@ -6,6 +6,12 @@ use crate::{
     vec3::{Ray, Vec3},
 };
 
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
+}
+
 pub trait Intersectable {
     fn intersection(self, origin: Vec3, direction: Vec3) -> Option<Intersection>;
 }
@@ -42,8 +48,9 @@ impl Entity {
             - (self.radius.powi(2) - dist_from_closest_point_to_sphere.powi(2))
                 .abs()
                 .sqrt();
+
         let point = ray.origin + (ray.direction * dist_to_intersection);
-        // let roughness = Vec3::rng() * self.material.roughness;
+        //let roughness = Vec3::rng() * self.material.roughness;
         let normal = (point - self.position).normalize(); // + roughness;
 
         if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
