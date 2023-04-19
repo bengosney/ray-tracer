@@ -93,7 +93,7 @@ function App() {
   //const { width, height } = useMaxSize(ASPECT_4_3);
   const width = 320 * 2;
   const height = 240 * 2;
-  const focalLength = 1;
+  const focalLength = 75;
   const samples = 15;
   const bounces = 4;
   const [context, setContext] = useState<CanvasRenderingContext2D>();
