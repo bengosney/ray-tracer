@@ -71,6 +71,15 @@ impl Vec3 {
         vectors.iter().fold(Vec3::zero(), |sum, &val| sum + val) * (1.0 / vectors.len() as f32)
     }
 
+    pub fn gamma(self, gamma: f32) -> Self {
+        let gamma_correction = 1.0 / gamma;
+        Vec3::new(
+            (255.0 * (self.x / 255.0)).powf(gamma_correction),
+            (255.0 * (self.y / 255.0)).powf(gamma_correction),
+            (255.0 * (self.z / 255.0)).powf(gamma_correction),
+        )
+    }
+
     pub fn rng() -> Self {
         let mut rng = rand::thread_rng();
 

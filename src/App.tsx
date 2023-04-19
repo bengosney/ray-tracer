@@ -95,7 +95,7 @@ function App() {
   const height = 240 * 2;
   const focalLength = 75;
   const samples = 15;
-  const bounces = 4;
+  const bounces = 50;
   const [context, setContext] = useState<CanvasRenderingContext2D>();
 
   const mat = rgb(150, 150, 150);

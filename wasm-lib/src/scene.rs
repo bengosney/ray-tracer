@@ -94,9 +94,9 @@ impl Scene {
                 let bounce =
                     Self::trace(bounce_ray.defuse_scatter(), entities, background, steps - 1);
 
-                return bounce * 0.5;
-                //let material = entity.material();
-                //Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
+                //return bounce * 0.5;
+                let material = entity.material();
+                Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
             }
             _ => {
                 let unit_direction: Vec3 = ray.direction.normalize();
