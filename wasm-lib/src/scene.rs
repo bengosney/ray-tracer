@@ -78,8 +78,12 @@ impl Scene {
     }
 
     fn trace(ray: Ray, entities: Vec<Entity>, background: Vec3, steps: u32) -> Vec3 {
+        if steps == 0 {
+            return Vec3::new(0.0, 0.0, 0.0);
+        }
+
         match Self::intersection(ray, entities.clone()) {
-            Some(intersection) if steps > 0 => {
+            Some(intersection) => {
                 let reflected_direction: Vec3 = ray.direction.reflect(intersection.normal);
                 let entity: Entity = intersection.entity.unwrap();
 
@@ -90,8 +94,9 @@ impl Scene {
                 let bounce =
                     Self::trace(bounce_ray.defuse_scatter(), entities, background, steps - 1);
 
-                let material = entity.material();
-                Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
+                return bounce * 0.5;
+                //let material = entity.material();
+                //Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
             }
             _ => {
                 let unit_direction: Vec3 = ray.direction.normalize();
@@ -119,15 +124,15 @@ impl Scene {
         let half_width: i32 = (self.width / 2) as i32;
         let half_height: i32 = (self.height / 2) as i32;
 
-        let width = self.width;
-        let height = self.height;
-        let focal_length = self.focal_length;
-        let bounces = self.bounces;
-        let entities = self.entities.clone();
-        let sample_count = self.samples;
-        let background = self.background;
+        let width: u32 = self.width;
+        let height: u32 = self.height;
+        let focal_length: u32 = self.focal_length;
+        let bounces: u32 = self.bounces;
+        let entities: Vec<Entity> = self.entities.clone();
+        let sample_count: u32 = self.samples;
+        let background: Vec3 = self.background;
 
-        let local_context = ctx.clone();
+        let local_context: CanvasRenderingContext2d = ctx.clone();
 
         let origin: Vec3 = Vec3::zero();
         let mut samples: Vec<Vec<Vec<Vec3>>> =

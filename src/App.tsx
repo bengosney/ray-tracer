@@ -93,26 +93,30 @@ function App() {
   //const { width, height } = useMaxSize(ASPECT_4_3);
   const width = 320 * 2;
   const height = 240 * 2;
-  const focalLength = 100;
-  const samples = 10;
+  const focalLength = 1;
+  const samples = 15;
   const bounces = 4;
   const [context, setContext] = useState<CanvasRenderingContext2D>();
 
   const mat = rgb(150, 150, 150);
+  const none = rgb(0, 0, 0);
+
+  const mainSize = 8;
+  const floorSize = 500;
   const sceneObjects: SceneObjects = [
     {
       shape: "sphere",
-      radius: 8,
+      radius: mainSize,
       position: vec3(0, 0, 10),
-      emission: mat,
+      emission: none,
       reflectivity: rgb(0.5, 0.5, 0.5),
       roughness: 0,
     },
     {
       shape: "sphere",
-      position: vec3(0, 1000, 0),
-      radius: 990,
-      emission: mat,
+      position: vec3(0, floorSize + mainSize, 0),
+      radius: floorSize,
+      emission: none,
       reflectivity: rgb(0.5, 0.5, 0.5),
       roughness: 3,
     },
