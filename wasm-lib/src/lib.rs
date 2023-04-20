@@ -4,6 +4,7 @@ mod rgb;
 mod scene;
 mod vec2;
 mod vec3;
+mod camera;
 
 use wasm_bindgen::prelude::*;
 
