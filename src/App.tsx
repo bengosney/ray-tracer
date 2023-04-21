@@ -94,7 +94,7 @@ function App() {
   const width = 320 * 2;
   const height = 240 * 2;
   const focalLength = 1000;
-  const samples = 0;
+  const samples = 100;
   const bounces = 50;
   const fov = 80;
   const [context, setContext] = useState<CanvasRenderingContext2D>();
@@ -102,20 +102,21 @@ function App() {
   const mat = rgb(150, 150, 150);
   const none = rgb(0, 0, 0);
 
+  const mainZ = focalLength / 4;
   const mainSize = 25;
-  const floorSize = 500;
+  const floorSize = 5000;
   const sceneObjects: SceneObjects = [
     {
       shape: "sphere",
       radius: mainSize,
-      position: vec3(0, 0, focalLength),
+      position: vec3(0, 0, mainZ),
       emission: none,
       reflectivity: rgb(0.5, 0.5, 0.5),
       roughness: 0,
     },
     {
       shape: "sphere",
-      position: vec3(0, floorSize + mainSize, focalLength),
+      position: vec3(0, floorSize + mainSize, mainZ),
       radius: floorSize,
       emission: none,
       reflectivity: rgb(0.5, 0.5, 0.5),
@@ -124,7 +125,7 @@ function App() {
     {
       shape: "sphere",
       radius: mainSize,
-      position: vec3(focalLength / 10, 0, focalLength),
+      position: vec3(mainSize * 2.5, 0, mainZ),
       emission: rgb(255, 0, 0),
       reflectivity: rgb(0.5, 0.5, 0.5),
       roughness: 0,
