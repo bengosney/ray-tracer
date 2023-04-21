@@ -134,11 +134,6 @@ impl Scene {
         let sample_count: u32 = self.samples;
         let background: Vec3 = self.background;
 
-        let fov: f32 = self.fov;
-
-        let aspect_ratio: f32 = width as f32 / height as f32;
-        let fov_scale: f32 = ((fov / 2.0) as f64).tan() as f32;
-
         let local_context: CanvasRenderingContext2d = ctx.clone();
 
         let origin: Vec3 = Vec3::zero();
@@ -157,9 +152,6 @@ impl Scene {
             log(&format!("Sample {}", s));
             for i in 0..width as i32 {
                 for j in 0..height as i32 {
-                    let u: f32 = i as f32 / (width-1) as f32;
-                    let v: f32 = j as f32 / (height-1) as f32;
-
                     let x: i32 = i - half_width;
                     let y: i32 = j - half_height;
                     let direction: Vec3 = (Vec3 {
@@ -167,23 +159,6 @@ impl Scene {
                         y: y as f32,
                         z: focal_length as f32,
                     }).normalize();
-
-                    let x2: f32 = (half_width as f32 - i as f32) * aspect_ratio * fov_scale;
-                    let y2: f32 = (half_height as f32 - j as f32) * fov_scale;
-                    let direction2:Vec3 = (Vec3 {
-                        x: x2 as f32,
-                        y: y2 as f32,
-                        z: focal_length as f32,
-                    }).normalize();
-
-                    if ((i == half_width && j == half_height) || (i == 0 && j == 0)) && s == 0 {
-                        log("==========");
-                        log(&format!("width: {}({},{}) x height: {}({},{})", width, i,x, height, j, y));
-                        log(&format!("i: {}, aspect_ratio: {}, fov: {}, fov_scale: {}", i, aspect_ratio, fov ,fov_scale));
-                        log(&format!("{}", direction));
-                        log(&format!("{}", direction2));
-                        log("==========");
-                    }
 
                     let res: Vec3 = Self::trace(
                         Ray { origin, direction },
