@@ -94,7 +94,7 @@ function App() {
   const width = 320 * 2;
   const height = 240 * 2;
   const focalLength = 1000;
-  const samples = 100;
+  const samples = 20;
   const bounces = 50;
   const fov = 80;
   const [context, setContext] = useState<CanvasRenderingContext2D>();
@@ -126,8 +126,8 @@ function App() {
       shape: "sphere",
       radius: mainSize,
       position: vec3(mainSize * 2.5, 0, mainZ),
-      emission: rgb(255, 0, 0),
-      reflectivity: rgb(0.5, 0.5, 0.5),
+      emission: rgb(512, 0, 0),
+      reflectivity: rgb(1.0, 0.0, 0.0),
       roughness: 0,
     },
   ];

@@ -5,6 +5,7 @@ mod scene;
 mod vec2;
 mod vec3;
 mod camera;
+mod convolutions;
 
 use wasm_bindgen::prelude::*;
 
