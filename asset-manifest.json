@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/ray-tracer/static/css/main.18924f1f.css",
-    "main.js": "/ray-tracer/static/js/main.bdad795d.js",
+    "main.js": "/ray-tracer/static/js/main.cc076f52.js",
     "static/js/787.e13c6cf7.chunk.js": "/ray-tracer/static/js/787.e13c6cf7.chunk.js",
-    "static/media/wasm_lib_bg.wasm": "/ray-tracer/static/media/wasm_lib_bg.c62c946803162b40f679.wasm",
+    "static/media/wasm_lib_bg.wasm": "/ray-tracer/static/media/wasm_lib_bg.3ac73e4ee56817ffd6ff.wasm",
     "index.html": "/ray-tracer/index.html",
     "main.18924f1f.css.map": "/ray-tracer/static/css/main.18924f1f.css.map",
-    "main.bdad795d.js.map": "/ray-tracer/static/js/main.bdad795d.js.map",
+    "main.cc076f52.js.map": "/ray-tracer/static/js/main.cc076f52.js.map",
     "787.e13c6cf7.chunk.js.map": "/ray-tracer/static/js/787.e13c6cf7.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.18924f1f.css",
-    "static/js/main.bdad795d.js"
+    "static/js/main.cc076f52.js"
   ]
 }
