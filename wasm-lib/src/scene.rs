@@ -4,6 +4,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
+use crate::convolutions::Matrix;
 use crate::rgb::RGB;
 use crate::vec3::Ray;
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
@@ -109,12 +110,18 @@ impl Scene {
         }
     }
 
-    fn samples_to_pixel_map(samples: &Vec<Vec<Vec<Vec3>>>) -> Vec<u8> {
+    fn avg_samples(samples: &Vec<Vec<Vec<Vec3>>>) -> Vec<Vec<Vec3>> {
+        samples
+            .iter()
+            .map(|row| row.iter().map(|samples| Vec3::avg(samples)).collect())
+            .collect()
+    }
+
+    fn samples_to_pixel_map(samples: &Vec<Vec<Vec3>>) -> Vec<u8> {
         samples.iter().fold(Vec::new(), |acc: Vec<u8>, row| {
             [
                 acc,
                 row.iter()
-                    .map(|sample_group| Vec3::avg(&sample_group))
                     .map(|sample| vec![sample.x as u8, sample.y as u8, sample.z as u8, 255])
                     .fold(Vec::new(), |acc: Vec<u8>, sample| [acc, sample].concat()),
             ]
@@ -158,7 +165,8 @@ impl Scene {
                         x: x as f32,
                         y: y as f32,
                         z: focal_length as f32,
-                    }).normalize();
+                    })
+                    .normalize();
 
                     let res: Vec3 = Self::trace(
                         Ray { origin, direction },
@@ -170,10 +178,20 @@ impl Scene {
                 }
             }
 
-            let mut data: Vec<u8> = Scene::samples_to_pixel_map(&samples);
-            let image_data: ImageData =
-                ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)
-                    .unwrap();
+            //let gaussian = Matrix::<f32>::new(vec![1.0,2.0,1.0,2.0,4.0,2.0,1.0,2.0,1.0]);
+            let gaussian = Matrix::<f32>::new(vec![
+                0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0,
+            ]);
+            let mut pixels: Vec<Vec<Vec3>> = Scene::avg_samples(&samples);
+            pixels = gaussian.apply(pixels);
+            let image_data: ImageData = ImageData::new_with_u8_clamped_array_and_sh(
+                Clamped(&mut Scene::samples_to_pixel_map(&pixels)),
+                width,
+                height,
+            )
+            .unwrap();
             local_context.put_image_data(&image_data, 0.0, 0.0).ok();
 
             s += 1;
