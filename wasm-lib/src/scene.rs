@@ -1,10 +1,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::vec;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
-use crate::convolutions::Matrix;
+use crate::convolutions::Kernel;
 use crate::rgb::RGB;
 use crate::vec3::Ray;
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
@@ -35,6 +36,7 @@ pub struct Scene {
     pub bounces: u32,
     pub background: Vec3,
     pub fov: f32,
+    filters: Vec<Kernel<i16>>,
 }
 
 #[wasm_bindgen]
@@ -58,6 +60,7 @@ impl Scene {
             bounces,
             background: background.into(),
             fov,
+            filters: vec![],
         }
     }
 
@@ -140,6 +143,7 @@ impl Scene {
         let entities: Vec<Entity> = self.entities.clone();
         let sample_count: u32 = self.samples;
         let background: Vec3 = self.background;
+        let filters: Vec<Kernel<i16>> = self.filters.clone();
 
         let local_context: CanvasRenderingContext2d = ctx.clone();
 
@@ -178,14 +182,12 @@ impl Scene {
                 }
             }
 
-            //let gaussian = Matrix::<f32>::new(vec![1.0,2.0,1.0,2.0,4.0,2.0,1.0,2.0,1.0]);
-            let gaussian = Matrix::<f32>::new(vec![
-                0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0,
-            ]);
             let mut pixels: Vec<Vec<Vec3>> = Scene::avg_samples(&samples);
-            pixels = gaussian.apply(pixels);
+
+            for f in filters.clone() {
+                pixels = f.apply(pixels);
+            }
+
             let image_data: ImageData = ImageData::new_with_u8_clamped_array_and_sh(
                 Clamped(&mut Scene::samples_to_pixel_map(&pixels)),
                 width,
