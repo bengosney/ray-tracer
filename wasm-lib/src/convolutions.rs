@@ -1,6 +1,7 @@
 use crate::vec3::Vec3;
 
 use wasm_bindgen::prelude::*;
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
@@ -8,11 +9,30 @@ extern "C" {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct Kernel<T:Copy> {
+pub struct Kernel<T> {
     shape: usize,
     data: Vec<T>,
     half_range: usize,
     normalize: bool
+}
+
+#[wasm_bindgen]
+pub struct ImageFilter {
+    kernel: Kernel<i16>
+}
+
+#[wasm_bindgen]
+impl ImageFilter {
+    #[wasm_bindgen(constructor)]
+    pub fn new(data: Vec<i16>, normalize: bool) -> Self {
+        Self { kernel: Kernel::new(data, normalize) }
+    }
+}
+
+impl ImageFilter {
+    pub fn get_kernel(&self) -> &Kernel<i16> {
+        &self.kernel
+    }
 }
 
 impl<T: Copy> Kernel<T> {

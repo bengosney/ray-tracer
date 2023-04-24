@@ -5,6 +5,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
+use crate::convolutions::ImageFilter;
 use crate::convolutions::Kernel;
 use crate::rgb::RGB;
 use crate::vec3::Ray;
@@ -62,6 +63,10 @@ impl Scene {
             fov,
             filters: vec![],
         }
+    }
+
+    pub fn add_filter(&mut self, filter: ImageFilter) {
+        self.filters.push(filter.get_kernel().clone());
     }
 
     pub fn add_entity(&mut self, entity: Entity) {
