@@ -33,7 +33,7 @@ const SETTINGS: Settings = {
   height: 480,
   focalLength: 1000,
   samples: 25,
-  bounces: 10,
+  bounces: 50,
   fov: 80,
 };
 
@@ -42,14 +42,6 @@ const MAIN_SIZE: number = 25;
 const FLOOR_SIZE: number = 5000;
 
 const SCENE_DATA: SceneObject[] = [
-  {
-    shape: "sphere",
-    radius: MAIN_SIZE,
-    position: vec3(0, 0, MAIN_Z),
-    emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.5, 0.5, 0.5),
-    roughness: 0,
-  },
   {
     shape: "sphere",
     position: vec3(0, FLOOR_SIZE + MAIN_SIZE, MAIN_Z),
@@ -61,10 +53,34 @@ const SCENE_DATA: SceneObject[] = [
   {
     shape: "sphere",
     radius: MAIN_SIZE,
+    position: vec3(0, 0, MAIN_Z),
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(0.5, 0.5, 0.5),
+    roughness: 0,
+  },
+  {
+    shape: "sphere",
+    radius: MAIN_SIZE,
     position: vec3(MAIN_SIZE * 2.5, 0, MAIN_Z),
-    emission: rgb(512, 0, 0),
+    emission: rgb(768, 0, 0),
     reflectivity: rgb(1.0, 0.0, 0.0),
     roughness: 0,
+  },
+  {
+    shape: "sphere",
+    radius: MAIN_SIZE,
+    position: vec3((MAIN_SIZE * 2.5) * .6, 0, MAIN_Z + (MAIN_SIZE * 2)),
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(0.35, 1.0, 0.2),
+    roughness: 0.1,
+  },
+  {
+    shape: "sphere",
+    radius: MAIN_SIZE,
+    position: vec3(-((MAIN_SIZE * 2.5) * .6), 0, MAIN_Z + (MAIN_SIZE * 2)),
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(0.0, 0.0, 1.0),
+    roughness: 0.1,
   },
 ];
 
@@ -110,12 +126,12 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas 
-        animating={false} 
-        width={SETTINGS.width} 
-        height={SETTINGS.height} 
-        init={onCanvasInit} 
-        frame={() => {}} 
+      <Canvas
+        animating={false}
+        width={SETTINGS.width}
+        height={SETTINGS.height}
+        init={onCanvasInit}
+        frame={() => { }}
       />
     </div>
   );
