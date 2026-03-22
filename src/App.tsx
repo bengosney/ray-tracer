@@ -1,174 +1,122 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import Canvas from "./Canvas";
-import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
 import { Vec3, vec3 } from "./utils/math";
-import { RGB, rgb, rgbToVec3, vec3ToRGB } from "./utils/colour";
+import { RGB, rgb } from "./utils/colour";
+import initWASM, { Scene, Entity, Vec3 as WasmVec3, RGB as WasmRGB } from "wasm-lib";
 
-import initWASM, { Scene, Entity, Shape as wasmShape, Vec3 as wasmVec3, RGB as wasmRGB } from "wasm-lib";
-
-type Shape = "sphere" | "cube";
-
-interface Object {
-  shape: Shape;
+interface BaseObject {
   position: Vec3;
   emission: RGB;
   reflectivity: RGB;
   roughness: number;
 }
 
-interface Sphere extends Object {
+interface Sphere extends BaseObject {
   shape: "sphere";
   radius: number;
 }
 
-interface Cube extends Object {
-  shape: "cube";
+type SceneObject = Sphere;
+
+interface Settings {
+  width: number,
+  height: number,
+  focalLength: number,
+  samples: number,
+  bounces: number,
+  fov: number,
 }
 
-type Objects = Sphere; // | Cube;
+const SETTINGS: Settings = {
+  width: 640,
+  height: 480,
+  focalLength: 1000,
+  samples: 25,
+  bounces: 10,
+  fov: 80,
+};
 
-type SceneObjects = Array<Objects>;
+const MAIN_Z: number = SETTINGS.focalLength / 4;
+const MAIN_SIZE: number = 25;
+const FLOOR_SIZE: number = 5000;
 
-const objects: SceneObjects = [
+const SCENE_DATA: SceneObject[] = [
   {
     shape: "sphere",
-    position: vec3(1000, 0, 0),
-    radius: 990,
+    radius: MAIN_SIZE,
+    position: vec3(0, 0, MAIN_Z),
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.5, 0, 0),
-    roughness: 10,
-  },
-  {
-    shape: "sphere",
-    position: vec3(-1000, 0, 0),
-    radius: 990,
-    emission: rgb(0, 0, 0),
-    reflectivity: rgb(0, 0.5, 0),
-    roughness: 3,
-  },
-  {
-    shape: "sphere",
-    position: vec3(0, 1000, 0),
-    radius: 990,
-    emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.5, 0.5, 0.5),
-    roughness: 3,
-  },
-  {
-    shape: "sphere",
-    position: vec3(0, -1000, 0),
-    radius: 990,
-    emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.5, 0.5, 0.5),
-    roughness: 3,
-  },
-  {
-    shape: "sphere",
-    position: vec3(0, 0, 1000),
-    radius: 990,
-    emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.5, 0.5, 0.5),
-    roughness: 3,
-  },
-  {
-    shape: "sphere",
-    position: vec3(0, -14.5, 7),
-    radius: 5,
-    emission: rgb(5550, 5550, 5550),
     reflectivity: rgb(0.5, 0.5, 0.5),
     roughness: 0,
   },
   {
     shape: "sphere",
-    position: vec3(3, 7, 7),
-    radius: 3,
+    position: vec3(0, FLOOR_SIZE + MAIN_SIZE, MAIN_Z),
+    radius: FLOOR_SIZE,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(1, 1, 1),
+    reflectivity: rgb(0.5, 0.5, 0.5),
+    roughness: 3,
+  },
+  {
+    shape: "sphere",
+    radius: MAIN_SIZE,
+    position: vec3(MAIN_SIZE * 2.5, 0, MAIN_Z),
+    emission: rgb(512, 0, 0),
+    reflectivity: rgb(1.0, 0.0, 0.0),
     roughness: 0,
   },
 ];
 
 function App() {
-  //const { width, height } = useMaxSize(ASPECT_4_3);
-  const width = 320 * 2;
-  const height = 240 * 2;
-  const focalLength = 1000;
-  const samples = 0;
-  const bounces = 50;
-  const fov = 80;
-  const [context, setContext] = useState<CanvasRenderingContext2D>();
-
-  const mat = rgb(150, 150, 150);
-  const none = rgb(0, 0, 0);
-
-  const mainZ = focalLength / 4;
-  const mainSize = 25;
-  const floorSize = 5000;
-  const sceneObjects: SceneObjects = [
-    {
-      shape: "sphere",
-      radius: mainSize,
-      position: vec3(0, 0, mainZ),
-      emission: none,
-      reflectivity: rgb(0.5, 0.5, 0.5),
-      roughness: 0,
-    },
-    {
-      shape: "sphere",
-      position: vec3(0, floorSize + mainSize, mainZ),
-      radius: floorSize,
-      emission: none,
-      reflectivity: rgb(0.5, 0.5, 0.5),
-      roughness: 3,
-    },
-    {
-      shape: "sphere",
-      radius: mainSize,
-      position: vec3(mainSize * 2.5, 0, mainZ),
-      emission: rgb(512, 0, 0),
-      reflectivity: rgb(1.0, 0.0, 0.0),
-      roughness: 0,
-    },
-  ];
+  const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
 
   useEffect(() => {
-    if (context) {
-      initWASM().then(() => {
-        const scene = new Scene(
-          context.canvas.width,
-          context.canvas.height,
-          focalLength,
-          samples,
-          bounces,
-          new wasmRGB(0, 0, 0),
-          //new wasmRGB(253, 244, 220),
-          //new wasmRGB(100, 100, 100),
-          fov,
-        );
-        sceneObjects.forEach((o) => {
-          const entity = new Entity(
-            new wasmVec3(o.position.x, o.position.y, o.position.z),
-            new wasmRGB(o.emission.r, o.emission.g, o.emission.b),
-            new wasmRGB(o.reflectivity.r, o.reflectivity.g, o.reflectivity.b),
-            o.roughness,
-            o.radius,
-          );
-          scene.add_entity(entity);
-        });
+    if (!context) return;
 
-        scene.render(context);
+    const renderScene = async () => {
+      await initWASM();
+
+      const scene = new Scene(
+        context.canvas.width,
+        context.canvas.height,
+        SETTINGS.focalLength,
+        SETTINGS.samples,
+        SETTINGS.bounces,
+        new WasmRGB(0, 0, 0),
+        SETTINGS.fov
+      );
+
+      SCENE_DATA.forEach((obj) => {
+        const entity = new Entity(
+          new WasmVec3(obj.position.x, obj.position.y, obj.position.z),
+          new WasmRGB(obj.emission.r, obj.emission.g, obj.emission.b),
+          new WasmRGB(obj.reflectivity.r, obj.reflectivity.g, obj.reflectivity.b),
+          obj.roughness,
+          obj.radius
+        );
+        scene.add_entity(entity);
       });
-    }
+
+      scene.render(context);
+    };
+
+    renderScene();
   }, [context]);
 
-  const init = useCallback((context: CanvasRenderingContext2D) => {
-    setContext(context);
+  const onCanvasInit = useCallback((ctx: CanvasRenderingContext2D) => {
+    setContext(ctx);
   }, []);
 
   return (
     <div className="App">
-      <Canvas animating={false} width={width} height={height} init={init} frame={() => {}} />
+      <Canvas 
+        animating={false} 
+        width={SETTINGS.width} 
+        height={SETTINGS.height} 
+        init={onCanvasInit} 
+        frame={() => {}} 
+      />
     </div>
   );
 }
