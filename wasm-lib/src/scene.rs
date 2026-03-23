@@ -87,6 +87,7 @@ impl Scene {
         }
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn trace(ray: Ray, entities: Vec<Entity>, background: Vec3, steps: u32) -> Vec3 {
         if steps == 0 {
             return Vec3::new(0.0, 0.0, 0.0);
@@ -115,11 +116,14 @@ impl Scene {
         }
     }
 
-    fn avg_samples(samples: &Vec<Vec<Vec<Vec3>>>) -> Vec<Vec<Vec3>> {
-        samples.iter().map(|row| row.iter().map(Vec3::avg).collect()).collect()
+    fn avg_samples(samples: &[Vec<Vec<Vec3>>]) -> Vec<Vec<Vec3>> {
+        samples
+            .iter()
+            .map(|row| row.iter().map(|v| Vec3::avg(v)).collect())
+            .collect()
     }
 
-    fn samples_to_pixel_map(samples: &Vec<Vec<Vec3>>) -> Vec<u8> {
+    fn samples_to_pixel_map(samples: &[Vec<Vec3>]) -> Vec<u8> {
         samples.iter().fold(Vec::new(), |acc: Vec<u8>, row| {
             [
                 acc,

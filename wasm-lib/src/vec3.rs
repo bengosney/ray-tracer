@@ -63,7 +63,7 @@ impl Vec3 {
 }
 
 impl Vec3 {
-    pub fn avg(vectors: &Vec<Vec3>) -> Self {
+    pub fn avg(vectors: &[Vec3]) -> Self {
         vectors.iter().fold(Vec3::zero(), |sum, &val| sum + val) * (1.0 / vectors.len() as f32)
     }
 
