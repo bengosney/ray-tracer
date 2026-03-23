@@ -32,7 +32,7 @@ const SETTINGS: Settings = {
   width: 640,
   height: 480,
   focalLength: 1000,
-  samples: 500,
+  samples: 5,
   bounces: 50,
   fov: 80,
 };

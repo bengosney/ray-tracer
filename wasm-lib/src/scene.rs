@@ -100,7 +100,7 @@ impl Scene {
                 let unit_direction: Vec3 = ray.direction.normalize();
                 let t = 0.5 * (unit_direction.y + 1.0);
 
-                (Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t) * 200.0
+                (Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t) * 175.0
             }
         }
     }
