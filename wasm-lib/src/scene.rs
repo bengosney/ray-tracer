@@ -7,7 +7,6 @@ use web_sys::{CanvasRenderingContext2d, ImageData};
 
 use crate::convolutions::ImageFilter;
 use crate::convolutions::Kernel;
-use crate::rgb::RGB;
 use crate::vec3::Ray;
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
@@ -35,7 +34,7 @@ pub struct Scene {
     pub focal_length: u32,
     pub samples: u32,
     pub bounces: u32,
-    pub background: Vec3,
+
     pub fov: f32,
     filters: Vec<Kernel<i16>>,
 }
@@ -43,15 +42,7 @@ pub struct Scene {
 #[wasm_bindgen]
 impl Scene {
     #[wasm_bindgen(constructor)]
-    pub fn new(
-        width: u32,
-        height: u32,
-        focal_length: u32,
-        samples: u32,
-        bounces: u32,
-        background: RGB,
-        fov: f32,
-    ) -> Self {
+    pub fn new(width: u32, height: u32, focal_length: u32, samples: u32, bounces: u32, fov: f32) -> Self {
         Self {
             entities: vec![],
             width,
@@ -59,7 +50,6 @@ impl Scene {
             focal_length,
             samples,
             bounces,
-            background: background.into(),
             fov,
             filters: vec![],
         }
@@ -87,8 +77,7 @@ impl Scene {
         }
     }
 
-    #[allow(clippy::only_used_in_recursion)]
-    fn trace(ray: Ray, entities: Vec<Entity>, background: Vec3, steps: u32) -> Vec3 {
+    fn trace(ray: Ray, entities: Vec<Entity>, steps: u32) -> Vec3 {
         if steps == 0 {
             return Vec3::new(0.0, 0.0, 0.0);
         }
@@ -102,7 +91,7 @@ impl Scene {
                     origin: intersection.point,
                     direction: reflected_direction,
                 };
-                let bounce = Self::trace(bounce_ray.defuse_scatter(), entities, background, steps - 1);
+                let bounce = Self::trace(bounce_ray.defuse_scatter(), entities, steps - 1);
 
                 let material = entity.material();
                 Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
@@ -145,7 +134,6 @@ impl Scene {
         let bounces: u32 = self.bounces;
         let entities: Vec<Entity> = self.entities.clone();
         let sample_count: u32 = self.samples;
-        let background: Vec3 = self.background;
         let filters: Vec<Kernel<i16>> = self.filters.clone();
 
         let local_context: CanvasRenderingContext2d = ctx.clone();
@@ -174,7 +162,7 @@ impl Scene {
                     })
                     .normalize();
 
-                    let res: Vec3 = Self::trace(Ray { origin, direction }, entities.clone(), background, bounces);
+                    let res: Vec3 = Self::trace(Ray { origin, direction }, entities.clone(), bounces);
                     samples[j as usize][i as usize].push(res);
                 }
             }

@@ -99,7 +99,6 @@ function App() {
         SETTINGS.focalLength,
         SETTINGS.samples,
         SETTINGS.bounces,
-        new WasmRGB(0, 0, 0),
         SETTINGS.fov,
       );
 
