@@ -34,11 +34,7 @@ impl Vec3 {
     }
 
     pub fn zero() -> Self {
-        Vec3 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        }
+        Vec3 { x: 0.0, y: 0.0, z: 0.0 }
     }
 
     pub fn mag(&self) -> f32 {

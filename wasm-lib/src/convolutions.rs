@@ -13,19 +13,21 @@ pub struct Kernel<T> {
     shape: usize,
     data: Vec<T>,
     half_range: usize,
-    normalize: bool
+    normalize: bool,
 }
 
 #[wasm_bindgen]
 pub struct ImageFilter {
-    kernel: Kernel<i16>
+    kernel: Kernel<i16>,
 }
 
 #[wasm_bindgen]
 impl ImageFilter {
     #[wasm_bindgen(constructor)]
     pub fn new(data: Vec<i16>, normalize: bool) -> Self {
-        Self { kernel: Kernel::new(data, normalize) }
+        Self {
+            kernel: Kernel::new(data, normalize),
+        }
     }
 }
 
@@ -47,7 +49,7 @@ impl<T: Copy> Kernel<T> {
     }
 
     pub fn range(&self) -> std::ops::RangeInclusive<isize> {
-        (0-(self.half_range as isize))..=self.half_range as isize
+        (0 - (self.half_range as isize))..=self.half_range as isize
     }
 
     pub fn vec_range(&self, len: usize) -> std::ops::Range<usize> {
@@ -62,9 +64,14 @@ impl<T: Copy> Kernel<T> {
     }
 }
 
-impl<T: Copy> Kernel<T> where f32: From<T> {
+impl<T: Copy> Kernel<T>
+where
+    f32: From<T>,
+{
     pub fn sum(&self) -> f32 {
-        self.data.iter().fold(0.0, |acc: f32, cur: &T| acc + f32::from(cur.clone()))
+        self.data
+            .iter()
+            .fold(0.0, |acc: f32, cur: &T| acc + f32::from(cur.clone()))
     }
 
     pub fn apply(&self, pixels: Vec<Vec<Vec3>>) -> Vec<Vec<Vec3>> {
@@ -83,7 +90,6 @@ impl<T: Copy> Kernel<T> where f32: From<T> {
                         processed[y][x] = processed[y][x] + (pixels[i][j] * f32::from(self.get_data(u, v))) / sum;
                     }
                 }
-
             }
         }
 

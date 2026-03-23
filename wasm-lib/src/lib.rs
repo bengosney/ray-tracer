@@ -1,11 +1,11 @@
+mod camera;
+mod convolutions;
 mod entity;
 mod intersection;
 mod rgb;
 mod scene;
 mod vec2;
 mod vec3;
-mod camera;
-mod convolutions;
 
 use wasm_bindgen::prelude::*;
 

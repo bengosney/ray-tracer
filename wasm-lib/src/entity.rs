@@ -41,8 +41,7 @@ impl Entity {
         let sphere_ray = self.position - ray.origin;
         let dist_sphere_ray = sphere_ray.mag();
         let dist_to_closest_point_on_ray = sphere_ray.dot(ray.direction);
-        let dist_from_closest_point_to_sphere =
-            (dist_sphere_ray.powi(2) - dist_to_closest_point_on_ray.powi(2)).sqrt();
+        let dist_from_closest_point_to_sphere = (dist_sphere_ray.powi(2) - dist_to_closest_point_on_ray.powi(2)).sqrt();
 
         let dist_to_intersection = dist_to_closest_point_on_ray
             - (self.radius.powi(2) - dist_from_closest_point_to_sphere.powi(2))
@@ -73,13 +72,7 @@ impl Entity {
 #[wasm_bindgen]
 impl Entity {
     #[wasm_bindgen(constructor)]
-    pub fn new(
-        position: Vec3,
-        emission: RGB,
-        reflectivity: RGB,
-        roughness: f32,
-        radius: f32,
-    ) -> Self {
+    pub fn new(position: Vec3, emission: RGB, reflectivity: RGB, roughness: f32, radius: f32) -> Self {
         Self {
             position,
             radius,

@@ -1,4 +1,4 @@
-use crate::vec3::{Vec3, Ray};
+use crate::vec3::{Ray, Vec3};
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Camera {

@@ -74,14 +74,12 @@ impl Scene {
     }
 
     fn intersection(ray: Ray, entities: Vec<Entity>) -> Option<Intersection> {
-        let intersection = entities
-            .iter()
-            .fold(Intersection::empty(), |previous, entity| {
-                match entity.intersection(ray.clone()) {
-                    Some(intersection) => Intersection::closest(intersection, previous),
-                    None => previous,
-                }
-            });
+        let intersection = entities.iter().fold(Intersection::empty(), |previous, entity| {
+            match entity.intersection(ray.clone()) {
+                Some(intersection) => Intersection::closest(intersection, previous),
+                None => previous,
+            }
+        });
 
         match intersection {
             Intersection { entity: None, .. } => None,
@@ -103,8 +101,7 @@ impl Scene {
                     origin: intersection.point,
                     direction: reflected_direction,
                 };
-                let bounce =
-                    Self::trace(bounce_ray.defuse_scatter(), entities, background, steps - 1);
+                let bounce = Self::trace(bounce_ray.defuse_scatter(), entities, background, steps - 1);
 
                 let material = entity.material();
                 Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
@@ -153,8 +150,7 @@ impl Scene {
         let local_context: CanvasRenderingContext2d = ctx.clone();
 
         let origin: Vec3 = Vec3::zero();
-        let mut samples: Vec<Vec<Vec<Vec3>>> =
-            vec![vec![vec![]; self.width as usize]; self.height as usize];
+        let mut samples: Vec<Vec<Vec<Vec3>>> = vec![vec![vec![]; self.width as usize]; self.height as usize];
 
         let f = Rc::new(RefCell::new(None));
         let g = f.clone();
@@ -177,12 +173,7 @@ impl Scene {
                     })
                     .normalize();
 
-                    let res: Vec3 = Self::trace(
-                        Ray { origin, direction },
-                        entities.clone(),
-                        background,
-                        bounces,
-                    );
+                    let res: Vec3 = Self::trace(Ray { origin, direction }, entities.clone(), background, bounces);
                     samples[j as usize][i as usize].push(res);
                 }
             }
