@@ -41,10 +41,10 @@ impl<T: Copy> Kernel<T> {
     pub fn new(data: Vec<T>, normalize: bool) -> Self {
         let shape = (data.len() as f32).sqrt().ceil() as usize;
         Self {
-            shape: shape,
-            data: data,
+            shape,
+            data,
             half_range: shape / 2,
-            normalize: normalize,
+            normalize,
         }
     }
 
@@ -69,9 +69,7 @@ where
     f32: From<T>,
 {
     pub fn sum(&self) -> f32 {
-        self.data
-            .iter()
-            .fold(0.0, |acc: f32, cur: &T| acc + f32::from(cur.clone()))
+        self.data.iter().fold(0.0, |acc: f32, cur: &T| acc + f32::from(*cur))
     }
 
     pub fn apply(&self, pixels: Vec<Vec<Vec3>>) -> Vec<Vec<Vec3>> {
@@ -93,6 +91,6 @@ where
             }
         }
 
-        return processed;
+        processed
     }
 }

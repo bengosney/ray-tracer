@@ -30,7 +30,7 @@ impl Display for Vec3 {
 impl Vec3 {
     #[wasm_bindgen(constructor)]
     pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Vec3 { x: x, y: y, z: z }
+        Vec3 { x, y, z }
     }
 
     pub fn zero() -> Self {

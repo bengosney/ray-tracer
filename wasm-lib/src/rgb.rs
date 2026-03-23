@@ -14,7 +14,7 @@ pub struct RGB {
 impl RGB {
     #[wasm_bindgen(constructor)]
     pub fn new(r: f32, g: f32, b: f32) -> RGB {
-        RGB { r: r, g: g, b: b }
+        RGB { r, g, b }
     }
 }
 

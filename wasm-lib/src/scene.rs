@@ -75,7 +75,7 @@ impl Scene {
 
     fn intersection(ray: Ray, entities: Vec<Entity>) -> Option<Intersection> {
         let intersection = entities.iter().fold(Intersection::empty(), |previous, entity| {
-            match entity.intersection(ray.clone()) {
+            match entity.intersection(ray) {
                 Some(intersection) => Intersection::closest(intersection, previous),
                 None => previous,
             }
@@ -116,10 +116,7 @@ impl Scene {
     }
 
     fn avg_samples(samples: &Vec<Vec<Vec<Vec3>>>) -> Vec<Vec<Vec3>> {
-        samples
-            .iter()
-            .map(|row| row.iter().map(|samples| Vec3::avg(samples)).collect())
-            .collect()
+        samples.iter().map(|row| row.iter().map(Vec3::avg).collect()).collect()
     }
 
     fn samples_to_pixel_map(samples: &Vec<Vec<Vec3>>) -> Vec<u8> {
@@ -185,7 +182,7 @@ impl Scene {
             }
 
             let image_data: ImageData = ImageData::new_with_u8_clamped_array_and_sh(
-                Clamped(&mut Scene::samples_to_pixel_map(&pixels)),
+                Clamped(&Scene::samples_to_pixel_map(&pixels)),
                 width,
                 height,
             )

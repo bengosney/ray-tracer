@@ -55,8 +55,8 @@ impl Entity {
         if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
             return Some(Intersection {
                 dist: dist_to_intersection,
-                point: point,
-                normal: normal,
+                point,
+                normal,
                 entity: Some(self),
             });
         }

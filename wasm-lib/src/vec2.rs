@@ -15,7 +15,7 @@ pub struct Vec2 {
 impl Vec2 {
     #[wasm_bindgen(constructor)]
     pub fn new(x: f32, y: f32) -> Self {
-        Self { x: x, y: y }
+        Self { x, y }
     }
 
     pub fn mag(self) -> f32 {
