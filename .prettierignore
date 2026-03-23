@@ -10,3 +10,4 @@ js/build/**/*.js
 *.html
 **/static/**/*.js
 .baseline.json
+Makefile
