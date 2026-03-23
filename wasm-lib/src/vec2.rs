@@ -31,7 +31,7 @@ impl Vec2 {
     }
 
     pub fn reflect(self, normal: Self) -> Self {
-        self - (normal * self.dot(normal))
+        self - (normal * 2.0 * self.dot(normal))
     }
 }
 
@@ -182,6 +182,6 @@ mod tests {
         let a = Vec2::new(1.0, 2.0);
         let b = Vec2::new(2.0, 2.0);
 
-        assert_eq!(a.reflect(b), Vec2::new(-11.0, -10.0));
+        assert_eq!(a.reflect(b), Vec2::new(-23.0, -22.0));
     }
 }
