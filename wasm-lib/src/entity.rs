@@ -45,8 +45,7 @@ impl Entity {
                 .sqrt();
 
         let point = ray.origin + (ray.direction * dist_to_intersection);
-        //let roughness = Vec3::rng() * self.material.roughness;
-        let normal = (point - self.position).normalize(); // + roughness;
+        let normal = (point - self.position).normalize();
 
         if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
             return Some(Intersection {
