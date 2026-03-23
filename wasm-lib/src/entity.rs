@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     intersection::Intersection,
-    rgb::RGB,
+    rgb::Rgb,
     vec3::{Ray, Vec3},
 };
 
@@ -10,10 +10,6 @@ use crate::{
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     pub fn log(s: &str);
-}
-
-pub trait Intersectable {
-    fn intersection(self, origin: Vec3, direction: Vec3) -> Option<Intersection>;
 }
 
 #[wasm_bindgen()]
@@ -31,8 +27,8 @@ pub struct Shape {}
 #[wasm_bindgen()]
 #[derive(Copy, Clone, PartialEq)]
 pub struct Material {
-    pub emission: RGB,
-    pub reflectivity: RGB,
+    pub emission: Rgb,
+    pub reflectivity: Rgb,
     pub roughness: f32,
 }
 
@@ -72,7 +68,7 @@ impl Entity {
 #[wasm_bindgen]
 impl Entity {
     #[wasm_bindgen(constructor)]
-    pub fn new(position: Vec3, emission: RGB, reflectivity: RGB, roughness: f32, radius: f32) -> Self {
+    pub fn new(position: Vec3, emission: Rgb, reflectivity: Rgb, roughness: f32, radius: f32) -> Self {
         Self {
             position,
             radius,

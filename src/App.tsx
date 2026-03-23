@@ -3,7 +3,7 @@ import "./App.css";
 import Canvas from "./Canvas";
 import { Vec3, vec3 } from "./utils/math";
 import { RGB, rgb } from "./utils/colour";
-import initWASM, { Scene, Entity, Vec3 as WasmVec3, RGB as WasmRGB } from "wasm-lib";
+import initWASM, { Scene, Entity, Vec3 as WasmVec3, Rgb as WasmRGB } from "wasm-lib";
 
 interface BaseObject {
   position: Vec3;

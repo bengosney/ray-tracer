@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 use std::fmt::Display;
 use std::ops::{Add, Div, Mul, Sub};
 
-use crate::rgb::RGB;
+use crate::rgb::Rgb;
 
 #[wasm_bindgen]
 extern "C" {
@@ -102,8 +102,8 @@ impl Vec3 {
     }
 }
 
-impl From<RGB> for Vec3 {
-    fn from(colour: RGB) -> Self {
+impl From<Rgb> for Vec3 {
+    fn from(colour: Rgb) -> Self {
         Vec3 {
             x: colour.r,
             y: colour.g,

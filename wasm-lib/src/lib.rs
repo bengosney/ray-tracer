@@ -1,4 +1,3 @@
-mod camera;
 mod convolutions;
 mod entity;
 mod intersection;

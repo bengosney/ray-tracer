@@ -4,23 +4,23 @@ use crate::vec3::Vec3;
 
 #[wasm_bindgen()]
 #[derive(Copy, Clone, PartialEq)]
-pub struct RGB {
+pub struct Rgb {
     pub r: f32,
     pub g: f32,
     pub b: f32,
 }
 
 #[wasm_bindgen]
-impl RGB {
+impl Rgb {
     #[wasm_bindgen(constructor)]
-    pub fn new(r: f32, g: f32, b: f32) -> RGB {
-        RGB { r, g, b }
+    pub fn new(r: f32, g: f32, b: f32) -> Rgb {
+        Rgb { r, g, b }
     }
 }
 
-impl From<Vec3> for RGB {
+impl From<Vec3> for Rgb {
     fn from(vec: Vec3) -> Self {
-        RGB {
+        Rgb {
             r: vec.x,
             g: vec.y,
             b: vec.z,
