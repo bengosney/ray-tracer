@@ -20,12 +20,12 @@ interface Sphere extends BaseObject {
 type SceneObject = Sphere;
 
 interface Settings {
-  width: number,
-  height: number,
-  focalLength: number,
-  samples: number,
-  bounces: number,
-  fov: number,
+  width: number;
+  height: number;
+  focalLength: number;
+  samples: number;
+  bounces: number;
+  fov: number;
 }
 
 const SETTINGS: Settings = {
@@ -69,7 +69,7 @@ const SCENE_DATA: SceneObject[] = [
   {
     shape: "sphere",
     radius: MAIN_SIZE,
-    position: vec3((MAIN_SIZE * 2.5) * .6, 0, MAIN_Z + (MAIN_SIZE * 2)),
+    position: vec3(MAIN_SIZE * 2.5 * 0.6, 0, MAIN_Z + MAIN_SIZE * 2),
     emission: rgb(0, 0, 0),
     reflectivity: rgb(0.35, 1.0, 0.2),
     roughness: 0.1,
@@ -77,7 +77,7 @@ const SCENE_DATA: SceneObject[] = [
   {
     shape: "sphere",
     radius: MAIN_SIZE,
-    position: vec3(-((MAIN_SIZE * 2.5) * .6), 0, MAIN_Z + (MAIN_SIZE * 2)),
+    position: vec3(-(MAIN_SIZE * 2.5 * 0.6), 0, MAIN_Z + MAIN_SIZE * 2),
     emission: rgb(0, 0, 0),
     reflectivity: rgb(0.0, 0.0, 1.0),
     roughness: 0.1,
@@ -100,7 +100,7 @@ function App() {
         SETTINGS.samples,
         SETTINGS.bounces,
         new WasmRGB(0, 0, 0),
-        SETTINGS.fov
+        SETTINGS.fov,
       );
 
       SCENE_DATA.forEach((obj) => {
@@ -109,7 +109,7 @@ function App() {
           new WasmRGB(obj.emission.r, obj.emission.g, obj.emission.b),
           new WasmRGB(obj.reflectivity.r, obj.reflectivity.g, obj.reflectivity.b),
           obj.roughness,
-          obj.radius
+          obj.radius,
         );
         scene.add_entity(entity);
       });
@@ -126,13 +126,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas
-        animating={false}
-        width={SETTINGS.width}
-        height={SETTINGS.height}
-        init={onCanvasInit}
-        frame={() => { }}
-      />
+      <Canvas animating={false} width={SETTINGS.width} height={SETTINGS.height} init={onCanvasInit} frame={() => {}} />
     </div>
   );
 }
