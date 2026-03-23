@@ -88,7 +88,7 @@ impl Scene {
                 let entity: Entity = intersection.entity.unwrap();
 
                 let bounce_ray: Ray = Ray {
-                    origin: intersection.point,
+                    origin: intersection.point + intersection.normal * 0.001,
                     direction: reflected_direction,
                 };
                 let bounce = Self::trace(bounce_ray.defuse_scatter(), entities, steps - 1);
