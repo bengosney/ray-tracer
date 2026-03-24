@@ -77,7 +77,7 @@ const SCENE_DATA: SceneObject[] = [
   {
     shape: "sphere",
     radius: MAIN_SIZE,
-    position: vec3(-(MAIN_SIZE * 2.5 * 0.6), 0, MAIN_Z + MAIN_SIZE * 2),
+    position: vec3(-(MAIN_SIZE * 2.5 * 0.6), 0, MAIN_Z - MAIN_SIZE * 1),
     emission: rgb(0, 0, 0),
     reflectivity: rgb(0.0, 0.0, 1.0),
     roughness: 0.1,
