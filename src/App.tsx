@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import Canvas from "./Canvas";
 import { Vec3, vec3 } from "./utils/math";
-import { mulRgb, RGB, rgb } from "./utils/colour";
+import { RGB, rgb } from "./utils/colour";
 import initWASM, { Scene, Entity, Vec3 as WasmVec3, Rgb as WasmRGB } from "wasm-lib";
 
 interface BaseObject {
