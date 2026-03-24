@@ -70,9 +70,9 @@ impl Vec3 {
     pub fn gamma(self, gamma: f32) -> Self {
         let gamma_correction = 1.0 / gamma;
         Vec3::new(
-            (255.0 * (self.x / 255.0)).powf(gamma_correction),
-            (255.0 * (self.y / 255.0)).powf(gamma_correction),
-            (255.0 * (self.z / 255.0)).powf(gamma_correction),
+            255.0 * (self.x / 255.0).clamp(0.0, 1.0).powf(gamma_correction),
+            255.0 * (self.y / 255.0).clamp(0.0, 1.0).powf(gamma_correction),
+            255.0 * (self.z / 255.0).clamp(0.0, 1.0).powf(gamma_correction),
         )
     }
 

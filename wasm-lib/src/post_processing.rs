@@ -1,11 +1,36 @@
+use std::any::Any;
+
 use crate::vec3::Vec3;
 
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(s: &str);
+pub trait PostProcess: Any {
+    fn process(&self, pixels: Vec<Vec<Vec3>>) -> Vec<Vec<Vec3>>;
+    fn as_any(&self) -> &dyn Any;
+}
+
+#[derive(Clone)]
+pub struct GammaCorrection {
+    gamma: f32,
+}
+
+impl GammaCorrection {
+    pub fn new(gamma: f32) -> Self {
+        Self { gamma }
+    }
+}
+
+impl PostProcess for GammaCorrection {
+    fn process(&self, pixels: Vec<Vec<Vec3>>) -> Vec<Vec<Vec3>> {
+        pixels
+            .into_iter()
+            .map(|row| row.into_iter().map(|v| v.gamma(self.gamma)).collect())
+            .collect()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -14,27 +39,6 @@ pub struct Kernel<T> {
     data: Vec<T>,
     half_range: usize,
     normalize: bool,
-}
-
-#[wasm_bindgen]
-pub struct ImageFilter {
-    kernel: Kernel<i16>,
-}
-
-#[wasm_bindgen]
-impl ImageFilter {
-    #[wasm_bindgen(constructor)]
-    pub fn new(data: Vec<i16>, normalize: bool) -> Self {
-        Self {
-            kernel: Kernel::new(data, normalize),
-        }
-    }
-}
-
-impl ImageFilter {
-    pub fn get_kernel(&self) -> &Kernel<i16> {
-        &self.kernel
-    }
 }
 
 impl<T: Copy> Kernel<T> {
@@ -92,5 +96,36 @@ where
         }
 
         processed
+    }
+}
+
+impl PostProcess for Kernel<i16> {
+    fn process(&self, pixels: Vec<Vec<Vec3>>) -> Vec<Vec<Vec3>> {
+        self.apply(pixels)
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+#[wasm_bindgen]
+pub struct ImageFilter {
+    kernel: Kernel<i16>,
+}
+
+#[wasm_bindgen]
+impl ImageFilter {
+    #[wasm_bindgen(constructor)]
+    pub fn new(data: Vec<i16>, normalize: bool) -> Self {
+        Self {
+            kernel: Kernel::new(data, normalize),
+        }
+    }
+}
+
+impl ImageFilter {
+    pub fn into_kernel(self) -> Kernel<i16> {
+        self.kernel
     }
 }

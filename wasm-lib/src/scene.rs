@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::vec;
@@ -5,8 +6,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
-use crate::convolutions::ImageFilter;
-use crate::convolutions::Kernel;
+use crate::post_processing::{GammaCorrection, ImageFilter, PostProcess};
 use crate::vec3::Ray;
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
@@ -36,7 +36,7 @@ pub struct Scene {
     pub bounces: u32,
 
     pub fov: f32,
-    filters: Vec<Kernel<i16>>,
+    post_processors: Vec<Rc<dyn PostProcess>>,
 }
 
 #[wasm_bindgen]
@@ -51,16 +51,22 @@ impl Scene {
             samples,
             bounces,
             fov,
-            filters: vec![],
+            post_processors: vec![],
         }
     }
 
     pub fn add_filter(&mut self, filter: ImageFilter) {
-        self.filters.push(filter.get_kernel().clone());
+        self.post_processors.push(Rc::new(filter.into_kernel()));
     }
 
     pub fn add_entity(&mut self, entity: Entity) {
         self.entities.push(entity);
+    }
+
+    pub fn set_gamma_correction(&mut self, gamma: f32) {
+        self.post_processors
+            .retain(|p| p.as_any().downcast_ref::<GammaCorrection>().is_none());
+        self.post_processors.push(Rc::new(GammaCorrection::new(gamma)));
     }
 
     fn intersection(ray: Ray, entities: Vec<Entity>) -> Option<Intersection> {
@@ -134,7 +140,7 @@ impl Scene {
         let bounces: u32 = self.bounces;
         let entities: Vec<Entity> = self.entities.clone();
         let sample_count: u32 = self.samples;
-        let filters: Vec<Kernel<i16>> = self.filters.clone();
+        let post_processors: Vec<Rc<dyn PostProcess>> = self.post_processors.iter().map(Rc::clone).collect();
 
         let local_context: CanvasRenderingContext2d = ctx.clone();
 
@@ -151,13 +157,14 @@ impl Scene {
                 return;
             }
             log(&format!("Sample {}", s));
+            let mut rng = rand::thread_rng();
             for i in 0..width as i32 {
                 for j in 0..height as i32 {
-                    let x: i32 = i - half_width;
-                    let y: i32 = j - half_height;
+                    let x: f32 = (i - half_width) as f32 + rng.gen_range(-0.5..0.5);
+                    let y: f32 = (j - half_height) as f32 + rng.gen_range(-0.5..0.5);
                     let direction: Vec3 = (Vec3 {
-                        x: x as f32,
-                        y: y as f32,
+                        x,
+                        y,
                         z: focal_length as f32,
                     })
                     .normalize();
@@ -169,8 +176,8 @@ impl Scene {
 
             let mut pixels: Vec<Vec<Vec3>> = Scene::avg_samples(&samples);
 
-            for f in filters.clone() {
-                pixels = f.apply(pixels);
+            for pp in post_processors.clone() {
+                pixels = pp.process(pixels);
             }
 
             let image_data: ImageData = ImageData::new_with_u8_clamped_array_and_sh(
