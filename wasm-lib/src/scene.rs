@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
-use crate::post_processing::{GammaCorrection, ImageFilter, Kernel, PostProcess};
+use crate::post_processing::{GammaCorrection, ImageFilter, PostProcess};
 use crate::vec3::Ray;
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
@@ -36,7 +36,6 @@ pub struct Scene {
     pub bounces: u32,
 
     pub fov: f32,
-    filters: Vec<Kernel<i16>>,
     post_processors: Vec<Rc<dyn PostProcess>>,
 }
 
@@ -52,13 +51,12 @@ impl Scene {
             samples,
             bounces,
             fov,
-            filters: vec![],
             post_processors: vec![],
         }
     }
 
     pub fn add_filter(&mut self, filter: ImageFilter) {
-        self.filters.push(filter.get_kernel().clone());
+        self.post_processors.push(Rc::new(filter.into_kernel()));
     }
 
     pub fn add_entity(&mut self, entity: Entity) {
@@ -66,7 +64,8 @@ impl Scene {
     }
 
     pub fn set_gamma_correction(&mut self, gamma: f32) {
-        self.post_processors.retain(|p| !p.is_gamma_correction());
+        self.post_processors
+            .retain(|p| p.as_any().downcast_ref::<GammaCorrection>().is_none());
         self.post_processors.push(Rc::new(GammaCorrection::new(gamma)));
     }
 
@@ -141,7 +140,6 @@ impl Scene {
         let bounces: u32 = self.bounces;
         let entities: Vec<Entity> = self.entities.clone();
         let sample_count: u32 = self.samples;
-        let filters: Vec<Kernel<i16>> = self.filters.clone();
         let post_processors: Vec<Rc<dyn PostProcess>> = self.post_processors.iter().map(Rc::clone).collect();
 
         let local_context: CanvasRenderingContext2d = ctx.clone();
@@ -177,10 +175,6 @@ impl Scene {
             }
 
             let mut pixels: Vec<Vec<Vec3>> = Scene::avg_samples(&samples);
-
-            for f in filters.clone() {
-                pixels = f.apply(pixels);
-            }
 
             for pp in post_processors.clone() {
                 pixels = pp.process(pixels);
