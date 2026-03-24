@@ -113,6 +113,7 @@ function App() {
         scene.add_entity(entity);
       });
 
+      scene.set_gamma_correction(2.2);
       scene.render(context);
     };
 

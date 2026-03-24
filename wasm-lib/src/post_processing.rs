@@ -8,6 +8,37 @@ extern "C" {
     pub fn log(s: &str);
 }
 
+pub trait PostProcess {
+    fn process(&self, pixels: Vec<Vec<Vec3>>) -> Vec<Vec<Vec3>>;
+    fn is_gamma_correction(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Clone)]
+pub struct GammaCorrection {
+    gamma: f32,
+}
+
+impl GammaCorrection {
+    pub fn new(gamma: f32) -> Self {
+        Self { gamma }
+    }
+}
+
+impl PostProcess for GammaCorrection {
+    fn process(&self, pixels: Vec<Vec<Vec3>>) -> Vec<Vec<Vec3>> {
+        pixels
+            .into_iter()
+            .map(|row| row.into_iter().map(|v| v.gamma(self.gamma)).collect())
+            .collect()
+    }
+
+    fn is_gamma_correction(&self) -> bool {
+        true
+    }
+}
+
 #[derive(Clone, PartialEq)]
 pub struct Kernel<T> {
     shape: usize,

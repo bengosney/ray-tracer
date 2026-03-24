@@ -6,8 +6,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
-use crate::convolutions::ImageFilter;
-use crate::convolutions::Kernel;
+use crate::post_processing::{GammaCorrection, ImageFilter, Kernel, PostProcess};
 use crate::vec3::Ray;
 use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
 
@@ -38,6 +37,7 @@ pub struct Scene {
 
     pub fov: f32,
     filters: Vec<Kernel<i16>>,
+    post_processors: Vec<Rc<dyn PostProcess>>,
 }
 
 #[wasm_bindgen]
@@ -53,6 +53,7 @@ impl Scene {
             bounces,
             fov,
             filters: vec![],
+            post_processors: vec![],
         }
     }
 
@@ -62,6 +63,11 @@ impl Scene {
 
     pub fn add_entity(&mut self, entity: Entity) {
         self.entities.push(entity);
+    }
+
+    pub fn set_gamma_correction(&mut self, gamma: f32) {
+        self.post_processors.retain(|p| !p.is_gamma_correction());
+        self.post_processors.push(Rc::new(GammaCorrection::new(gamma)));
     }
 
     fn intersection(ray: Ray, entities: Vec<Entity>) -> Option<Intersection> {
@@ -136,6 +142,7 @@ impl Scene {
         let entities: Vec<Entity> = self.entities.clone();
         let sample_count: u32 = self.samples;
         let filters: Vec<Kernel<i16>> = self.filters.clone();
+        let post_processors: Vec<Rc<dyn PostProcess>> = self.post_processors.iter().map(Rc::clone).collect();
 
         let local_context: CanvasRenderingContext2d = ctx.clone();
 
@@ -173,6 +180,10 @@ impl Scene {
 
             for f in filters.clone() {
                 pixels = f.apply(pixels);
+            }
+
+            for pp in post_processors.clone() {
+                pixels = pp.process(pixels);
             }
 
             let image_data: ImageData = ImageData::new_with_u8_clamped_array_and_sh(

@@ -1,6 +1,6 @@
-mod convolutions;
 mod entity;
 mod intersection;
+mod post_processing;
 mod rgb;
 mod scene;
 mod vec2;
