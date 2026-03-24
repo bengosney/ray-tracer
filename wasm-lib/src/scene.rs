@@ -92,14 +92,16 @@ impl Scene {
             Some(intersection) => {
                 let reflected_direction: Vec3 = ray.direction.reflect(intersection.normal);
                 let entity: Entity = intersection.entity.unwrap();
+                let material = entity.material();
+
+                let direction = reflected_direction + Vec3::rng_normal() * material.roughness;
 
                 let bounce_ray: Ray = Ray {
                     origin: intersection.point + intersection.normal * 0.001,
-                    direction: reflected_direction,
+                    direction,
                 };
-                let bounce = Self::trace(bounce_ray.defuse_scatter(), entities, steps - 1);
+                let bounce = Self::trace(bounce_ray, entities, steps - 1);
 
-                let material = entity.material();
                 Vec3::from(material.emission) + (bounce * Vec3::from(material.reflectivity))
             }
             _ => {

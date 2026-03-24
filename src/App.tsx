@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import Canvas from "./Canvas";
 import { Vec3, vec3 } from "./utils/math";
-import { RGB, rgb } from "./utils/colour";
+import { mulRgb, RGB, rgb } from "./utils/colour";
 import initWASM, { Scene, Entity, Vec3 as WasmVec3, Rgb as WasmRGB } from "wasm-lib";
 
 interface BaseObject {
@@ -48,7 +48,7 @@ const SCENE_DATA: SceneObject[] = [
     radius: FLOOR_SIZE,
     emission: rgb(0, 0, 0),
     reflectivity: rgb(0.5, 0.5, 0.5),
-    roughness: 3,
+    roughness: 1,
   },
   {
     shape: "sphere",
@@ -56,7 +56,7 @@ const SCENE_DATA: SceneObject[] = [
     position: vec3(0, 0, MAIN_Z),
     emission: rgb(0, 0, 0),
     reflectivity: rgb(0.5, 0.5, 0.5),
-    roughness: 0,
+    roughness: 1,
   },
   {
     shape: "sphere",
@@ -64,7 +64,7 @@ const SCENE_DATA: SceneObject[] = [
     position: vec3(MAIN_SIZE * 2.5, 0, MAIN_Z),
     emission: rgb(768, 0, 0),
     reflectivity: rgb(1.0, 0.0, 0.0),
-    roughness: 0,
+    roughness: 1,
   },
   {
     shape: "sphere",
@@ -72,15 +72,15 @@ const SCENE_DATA: SceneObject[] = [
     position: vec3(MAIN_SIZE * 2.5 * 0.6, 0, MAIN_Z + MAIN_SIZE * 2),
     emission: rgb(0, 0, 0),
     reflectivity: rgb(0.35, 1.0, 0.2),
-    roughness: 0.1,
+    roughness: 0.25,
   },
   {
     shape: "sphere",
     radius: MAIN_SIZE,
     position: vec3(-(MAIN_SIZE * 2.5 * 0.6), 0, MAIN_Z - MAIN_SIZE * 1),
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.0, 0.0, 1.0),
-    roughness: 0.1,
+    reflectivity: rgb(0.1, 0.1, 1.0),
+    roughness: 0.5,
   },
 ];
 
