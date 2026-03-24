@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::vec;
@@ -151,13 +152,14 @@ impl Scene {
                 return;
             }
             log(&format!("Sample {}", s));
+            let mut rng = rand::thread_rng();
             for i in 0..width as i32 {
                 for j in 0..height as i32 {
-                    let x: i32 = i - half_width;
-                    let y: i32 = j - half_height;
+                    let x: f32 = (i - half_width) as f32 + rng.gen_range(-0.5..0.5);
+                    let y: f32 = (j - half_height) as f32 + rng.gen_range(-0.5..0.5);
                     let direction: Vec3 = (Vec3 {
-                        x: x as f32,
-                        y: y as f32,
+                        x,
+                        y,
                         z: focal_length as f32,
                     })
                     .normalize();
