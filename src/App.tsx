@@ -84,6 +84,26 @@ const SCENE_DATA: SceneObject[] = [
   },
 ];
 
+const FLOOR_CENTER_Y = FLOOR_SIZE + MAIN_SIZE;
+const FLOOR_CENTER_Z = MAIN_Z;
+
+for (let i = 0; i < 25; i++) {
+  const radius = 2 + Math.random() * 5;
+  const x = (Math.random() - 0.5) * 200;
+  const z = MAIN_Z + (Math.random() - 0.5) * 200;
+  const dx = x;
+  const dz = z - FLOOR_CENTER_Z;
+  const surfaceY = FLOOR_CENTER_Y - Math.sqrt(FLOOR_SIZE * FLOOR_SIZE - dx * dx - dz * dz);
+  SCENE_DATA.push({
+    shape: "sphere",
+    radius,
+    position: vec3(x, surfaceY - radius, z),
+    emission: rgb(0, 0, 0),
+    reflectivity: rgb(Math.random(), Math.random(), Math.random()),
+    roughness: Math.random() * 0.5,
+  });
+}
+
 function App() {
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
 
