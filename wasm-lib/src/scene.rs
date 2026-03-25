@@ -97,8 +97,46 @@ impl Scene {
                 let normal = intersection.normal;
                 let view_dir = (ray.direction * -1.0).normalize();
                 let cos_theta = normal.dot(view_dir).max(0.0);
-
                 let albedo = Vec3::from(material.albedo);
+
+                if material.transparency > 0.0 {
+                    let mut rng = rand::thread_rng();
+
+                    let eta = if intersection.front_face {
+                        1.0 / material.ior
+                    } else {
+                        material.ior
+                    };
+
+                    let r0 = ((1.0 - material.ior) / (1.0 + material.ior)).powi(2);
+                    let fresnel = r0 + (1.0 - r0) * (1.0 - cos_theta).powi(5);
+                    let reflect_prob = fresnel + (1.0 - material.transparency) * (1.0 - fresnel);
+
+                    let (bounce_ray, attenuation) = if rng.gen::<f32>() < reflect_prob {
+                        let reflected = ray.direction.reflect(normal);
+                        let direction = (reflected + Vec3::rng_normal() * material.roughness).normalize();
+                        let origin = intersection.point + normal * 0.001;
+                        (Ray { origin, direction }, Vec3::new(1.0, 1.0, 1.0))
+                    } else {
+                        match ray.direction.normalize().refract(normal, eta) {
+                            Some(refracted) => {
+                                let direction = (refracted + Vec3::rng_normal() * material.roughness * 0.5).normalize();
+                                let origin = intersection.point + normal * -0.001;
+                                (Ray { origin, direction }, albedo)
+                            }
+                            None => {
+                                let reflected = ray.direction.reflect(normal);
+                                let direction = (reflected + Vec3::rng_normal() * material.roughness).normalize();
+                                let origin = intersection.point + normal * 0.001;
+                                (Ray { origin, direction }, Vec3::new(1.0, 1.0, 1.0))
+                            }
+                        }
+                    };
+
+                    let incoming = Self::trace(bounce_ray, entities, steps - 1);
+                    return emitted + incoming * attenuation;
+                }
+
                 let dielectric_f0 = Vec3::new(0.04, 0.04, 0.04);
                 let f0 = Vec3::lerp(dielectric_f0, albedo, material.metallic);
 

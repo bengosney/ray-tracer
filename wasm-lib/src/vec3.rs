@@ -118,6 +118,16 @@ impl Vec3 {
     pub fn lerp(a: Vec3, b: Vec3, t: f32) -> Vec3 {
         a * (1.0 - t) + b * t
     }
+
+    pub fn refract(self, normal: Vec3, eta: f32) -> Option<Vec3> {
+        let cos_i = (self * -1.0).dot(normal).min(1.0);
+        let sin2_t = eta * eta * (1.0 - cos_i * cos_i);
+        if sin2_t > 1.0 {
+            return None;
+        }
+        let cos_t = (1.0 - sin2_t).sqrt();
+        Some(self * eta + normal * (eta * cos_i - cos_t))
+    }
 }
 
 impl From<Rgb> for Vec3 {
@@ -343,6 +353,25 @@ mod tests {
         let b = Vec3::new(2.0, 2.0, 2.0);
 
         assert_eq!(a.reflect(b), Vec3::new(-47.0, -46.0, -45.0));
+    }
+
+    #[test]
+    fn test_refract_straight_through() {
+        let dir = Vec3::new(0.0, 0.0, 1.0);
+        let normal = Vec3::new(0.0, 0.0, -1.0);
+        let result = dir.refract(normal, 1.0).unwrap();
+        assert!((result.x - 0.0).abs() < 1e-5);
+        assert!((result.y - 0.0).abs() < 1e-5);
+        assert!((result.z - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_refract_total_internal_reflection() {
+        let dir = Vec3::new(0.8, 0.0, 0.6).normalize();
+        let normal = Vec3::new(-1.0, 0.0, 0.0);
+        // High eta triggers total internal reflection
+        let result = dir.refract(normal, 3.0);
+        assert!(result.is_none());
     }
 
     #[test]

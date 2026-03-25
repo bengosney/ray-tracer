@@ -31,33 +31,47 @@ pub struct Material {
     pub albedo: Rgb,
     pub metallic: f32,
     pub roughness: f32,
+    pub transparency: f32,
+    pub ior: f32,
 }
 
 impl Entity {
     pub fn intersection(self, ray: Ray) -> Option<Intersection> {
-        let sphere_ray = self.position - ray.origin;
-        let dist_sphere_ray = sphere_ray.mag();
-        let dist_to_closest_point_on_ray = sphere_ray.dot(ray.direction);
-        let dist_from_closest_point_to_sphere = (dist_sphere_ray.powi(2) - dist_to_closest_point_on_ray.powi(2)).sqrt();
+        let oc = ray.origin - self.position;
+        let a = ray.direction.dot(ray.direction);
+        let half_b = oc.dot(ray.direction);
+        let c = oc.dot(oc) - self.radius * self.radius;
+        let discriminant = half_b * half_b - a * c;
 
-        let dist_to_intersection = dist_to_closest_point_on_ray
-            - (self.radius.powi(2) - dist_from_closest_point_to_sphere.powi(2))
-                .abs()
-                .sqrt();
-
-        let point = ray.origin + (ray.direction * dist_to_intersection);
-        let normal = (point - self.position).normalize();
-
-        if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
-            return Some(Intersection {
-                dist: dist_to_intersection,
-                point,
-                normal,
-                entity: Some(self),
-            });
+        if discriminant < 0.0 {
+            return None;
         }
 
-        None
+        let sqrtd = discriminant.sqrt();
+        let mut root = (-half_b - sqrtd) / a;
+        if root < 0.001 {
+            root = (-half_b + sqrtd) / a;
+            if root < 0.001 {
+                return None;
+            }
+        }
+
+        let point = ray.origin + ray.direction * root;
+        let outward_normal = (point - self.position) * (1.0 / self.radius);
+        let front_face = ray.direction.dot(outward_normal) < 0.0;
+        let normal = if front_face {
+            outward_normal
+        } else {
+            outward_normal * -1.0
+        };
+
+        Some(Intersection {
+            dist: root,
+            point,
+            normal,
+            entity: Some(self),
+            front_face,
+        })
     }
 
     pub fn material(self) -> Material {
@@ -68,7 +82,16 @@ impl Entity {
 #[wasm_bindgen]
 impl Entity {
     #[wasm_bindgen(constructor)]
-    pub fn new(position: Vec3, emission: Rgb, albedo: Rgb, metallic: f32, roughness: f32, radius: f32) -> Self {
+    pub fn new(
+        position: Vec3,
+        emission: Rgb,
+        albedo: Rgb,
+        metallic: f32,
+        roughness: f32,
+        radius: f32,
+        transparency: f32,
+        ior: f32,
+    ) -> Self {
         Self {
             position,
             radius,
@@ -77,6 +100,8 @@ impl Entity {
                 albedo,
                 metallic,
                 roughness,
+                transparency,
+                ior,
             },
         }
     }

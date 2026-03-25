@@ -5,6 +5,7 @@ pub struct Intersection {
     pub point: Vec3,
     pub normal: Vec3,
     pub entity: Option<Entity>,
+    pub front_face: bool,
 }
 
 impl Intersection {
@@ -14,6 +15,7 @@ impl Intersection {
             dist: f32::INFINITY,
             normal: Vec3::zero(),
             entity: None,
+            front_face: true,
         }
     }
 

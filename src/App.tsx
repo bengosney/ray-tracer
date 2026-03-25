@@ -11,6 +11,8 @@ interface BaseObject {
   albedo: RGB;
   metallic: number;
   roughness: number;
+  transparency: number;
+  ior: number;
 }
 
 interface Sphere extends BaseObject {
@@ -52,16 +54,20 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(0.5, 0.5, 0.5),
     metallic: 0.0,
     roughness: 1.0,
+    transparency: 0,
+    ior: 1.5,
   },
-  // center
+  // center - glass sphere
   {
     shape: "sphere",
     radius: MAIN_SIZE,
     position: vec3(0, 0, MAIN_Z),
     emission: rgb(0, 0, 0),
-    albedo: rgb(0.5, 0.5, 0.5),
+    albedo: rgb(1.0, 1.0, 1.0),
     metallic: 0.0,
-    roughness: 1.0,
+    roughness: 0.0,
+    transparency: 1.0,
+    ior: 1.5,
   },
   // red light
   {
@@ -72,6 +78,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(1.0, 0.0, 0.0),
     metallic: 0.0,
     roughness: 1.0,
+    transparency: 0,
+    ior: 1.5,
   },
   // back
   {
@@ -82,6 +90,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(0.6, 0.92, 0.2),
     metallic: 1.0,
     roughness: 0.1,
+    transparency: 0,
+    ior: 1.5,
   },
   // forword
   {
@@ -92,6 +102,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(0.1, 0.3, 1.0),
     metallic: 0.0,
     roughness: 0.2,
+    transparency: 0,
+    ior: 1.5,
   },
 ];
 
@@ -105,15 +117,19 @@ for (let i = 0; i < 25; i++) {
   const dx = x;
   const dz = z - FLOOR_CENTER_Z;
   const surfaceY = FLOOR_CENTER_Y - Math.sqrt(FLOOR_SIZE * FLOOR_SIZE - dx * dx - dz * dz);
-  const metallic = Math.random() > 0.6 ? 1.0 : 0.0;
+  const materialRoll = Math.random();
+  const metallic = materialRoll > 0.6 && materialRoll <= 0.85 ? 1.0 : 0.0;
+  const transparency = materialRoll > 0.85 ? 1.0 : 0.0;
   SCENE_DATA.push({
     shape: "sphere",
     radius,
     position: vec3(x, surfaceY - radius, z),
     emission: rgb(0, 0, 0),
-    albedo: rgb(Math.random(), Math.random(), Math.random()),
+    albedo: transparency > 0 ? rgb(1.0, 1.0, 1.0) : rgb(Math.random(), Math.random(), Math.random()),
     metallic,
-    roughness: Math.random(),
+    roughness: transparency > 0 ? 0.0 : Math.random(),
+    transparency,
+    ior: 1.5,
   });
 }
 
@@ -143,6 +159,8 @@ function App() {
           obj.metallic,
           obj.roughness,
           obj.radius,
+          obj.transparency,
+          obj.ior,
         );
         scene.add_entity(entity);
       });
