@@ -100,6 +100,24 @@ impl Vec3 {
             }
         }
     }
+
+    pub fn rng_hemisphere(normal: Vec3) -> Self {
+        let v = Self::rng_normal().normalize();
+        if v.dot(normal) > 0.0 {
+            v
+        } else {
+            v * -1.0
+        }
+    }
+
+    pub fn fresnel_schlick(f0: Vec3, cos_theta: f32) -> Vec3 {
+        let c = (1.0 - cos_theta.clamp(0.0, 1.0)).powi(5);
+        f0 + (Vec3::new(1.0, 1.0, 1.0) - f0) * c
+    }
+
+    pub fn lerp(a: Vec3, b: Vec3, t: f32) -> Vec3 {
+        a * (1.0 - t) + b * t
+    }
 }
 
 impl From<Rgb> for Vec3 {
@@ -217,25 +235,6 @@ pub struct Ray {
 impl Ray {
     pub fn at(self, distance: f32) -> Vec3 {
         self.origin + (self.direction * distance)
-    }
-
-    pub fn scatter(self, by: f32) -> Self {
-        let scatter = Vec3::rng() * by;
-        Self {
-            origin: self.origin,
-            direction: Vec3 {
-                x: self.direction.x + scatter.x,
-                y: self.direction.y + scatter.y,
-                z: self.direction.z,
-            },
-        }
-    }
-
-    pub fn defuse_scatter(self) -> Self {
-        Self {
-            origin: self.origin,
-            direction: self.direction + Vec3::rng_normal(),
-        }
     }
 }
 
