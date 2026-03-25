@@ -8,7 +8,8 @@ import initWASM, { Scene, Entity, Vec3 as WasmVec3, Rgb as WasmRGB } from "wasm-
 interface BaseObject {
   position: Vec3;
   emission: RGB;
-  reflectivity: RGB;
+  albedo: RGB;
+  metallic: number;
   roughness: number;
 }
 
@@ -42,45 +43,55 @@ const MAIN_SIZE: number = 25;
 const FLOOR_SIZE: number = 5000;
 
 const SCENE_DATA: SceneObject[] = [
+  // floor
   {
     shape: "sphere",
     position: vec3(0, FLOOR_SIZE + MAIN_SIZE, MAIN_Z),
     radius: FLOOR_SIZE,
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.5, 0.5, 0.5),
-    roughness: 1,
+    albedo: rgb(0.5, 0.5, 0.5),
+    metallic: 0.0,
+    roughness: 1.0,
   },
+  // center
   {
     shape: "sphere",
     radius: MAIN_SIZE,
     position: vec3(0, 0, MAIN_Z),
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.5, 0.5, 0.5),
-    roughness: 1,
+    albedo: rgb(0.5, 0.5, 0.5),
+    metallic: 0.0,
+    roughness: 1.0,
   },
+  // red light
   {
     shape: "sphere",
     radius: MAIN_SIZE,
     position: vec3(MAIN_SIZE * 2.5, 0, MAIN_Z),
     emission: rgb(768, 0, 0),
-    reflectivity: rgb(1.0, 0.0, 0.0),
-    roughness: 1,
+    albedo: rgb(1.0, 0.0, 0.0),
+    metallic: 0.0,
+    roughness: 1.0,
   },
+  // back
   {
     shape: "sphere",
     radius: MAIN_SIZE,
     position: vec3(MAIN_SIZE * 2.5 * 0.6, 0, MAIN_Z + MAIN_SIZE * 2),
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.35, 1.0, 0.2),
-    roughness: 0.25,
+    albedo: rgb(0.6, 0.92, 0.2),
+    metallic: 1.0,
+    roughness: 0.1,
   },
+  // forword
   {
     shape: "sphere",
     radius: MAIN_SIZE,
     position: vec3(-(MAIN_SIZE * 2.5 * 0.6), 0, MAIN_Z - MAIN_SIZE * 1),
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(0.1, 0.1, 1.0),
-    roughness: 0.5,
+    albedo: rgb(0.1, 0.3, 1.0),
+    metallic: 0.0,
+    roughness: 0.2,
   },
 ];
 
@@ -94,13 +105,15 @@ for (let i = 0; i < 25; i++) {
   const dx = x;
   const dz = z - FLOOR_CENTER_Z;
   const surfaceY = FLOOR_CENTER_Y - Math.sqrt(FLOOR_SIZE * FLOOR_SIZE - dx * dx - dz * dz);
+  const metallic = Math.random() > 0.6 ? 1.0 : 0.0;
   SCENE_DATA.push({
     shape: "sphere",
     radius,
     position: vec3(x, surfaceY - radius, z),
     emission: rgb(0, 0, 0),
-    reflectivity: rgb(Math.random(), Math.random(), Math.random()),
-    roughness: Math.random() * 0.5,
+    albedo: rgb(Math.random(), Math.random(), Math.random()),
+    metallic,
+    roughness: Math.random(),
   });
 }
 
@@ -126,7 +139,8 @@ function App() {
         const entity = new Entity(
           new WasmVec3(obj.position.x, obj.position.y, obj.position.z),
           new WasmRGB(obj.emission.r, obj.emission.g, obj.emission.b),
-          new WasmRGB(obj.reflectivity.r, obj.reflectivity.g, obj.reflectivity.b),
+          new WasmRGB(obj.albedo.r, obj.albedo.g, obj.albedo.b),
+          obj.metallic,
           obj.roughness,
           obj.radius,
         );

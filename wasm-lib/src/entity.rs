@@ -28,7 +28,8 @@ pub struct Shape {}
 #[derive(Copy, Clone, PartialEq)]
 pub struct Material {
     pub emission: Rgb,
-    pub reflectivity: Rgb,
+    pub albedo: Rgb,
+    pub metallic: f32,
     pub roughness: f32,
 }
 
@@ -67,13 +68,14 @@ impl Entity {
 #[wasm_bindgen]
 impl Entity {
     #[wasm_bindgen(constructor)]
-    pub fn new(position: Vec3, emission: Rgb, reflectivity: Rgb, roughness: f32, radius: f32) -> Self {
+    pub fn new(position: Vec3, emission: Rgb, albedo: Rgb, metallic: f32, roughness: f32, radius: f32) -> Self {
         Self {
             position,
             radius,
             material: Material {
                 emission,
-                reflectivity,
+                albedo,
+                metallic,
                 roughness,
             },
         }
