@@ -7,12 +7,6 @@ use std::ops::{Add, Div, Mul, Sub};
 use crate::rgb::Rgb;
 
 #[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(s: &str);
-}
-
-#[wasm_bindgen]
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Vec3 {
     pub x: f32,
@@ -223,18 +217,6 @@ impl Div<f32> for Vec3 {
             y: self.y / rhs,
             z: self.z / rhs,
         }
-    }
-}
-
-#[derive(Copy, Clone, PartialEq, Debug)]
-pub struct Ray {
-    pub origin: Vec3,
-    pub direction: Vec3,
-}
-
-impl Ray {
-    pub fn at(self, distance: f32) -> Vec3 {
-        self.origin + (self.direction * distance)
     }
 }
 

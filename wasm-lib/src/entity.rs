@@ -1,16 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-use crate::{
-    intersection::Intersection,
-    rgb::Rgb,
-    vec3::{Ray, Vec3},
-};
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(s: &str);
-}
+use crate::{intersection::Intersection, material::Material, ray::Ray, rgb::Rgb, vec3::Vec3};
 
 #[wasm_bindgen()]
 #[derive(Copy, Clone, PartialEq)]
@@ -18,19 +8,6 @@ pub struct Entity {
     position: Vec3,
     radius: f32,
     material: Material,
-}
-
-#[wasm_bindgen()]
-#[derive(Copy, Clone, PartialEq)]
-pub struct Shape {}
-
-#[wasm_bindgen()]
-#[derive(Copy, Clone, PartialEq)]
-pub struct Material {
-    pub emission: Rgb,
-    pub albedo: Rgb,
-    pub metallic: f32,
-    pub roughness: f32,
 }
 
 impl Entity {

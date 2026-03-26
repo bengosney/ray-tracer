@@ -1,30 +1,10 @@
-use rand::Rng;
-use std::cell::RefCell;
 use std::rc::Rc;
-use std::vec;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::Clamped;
-use web_sys::{CanvasRenderingContext2d, ImageData};
+use web_sys::CanvasRenderingContext2d;
 
+use crate::entity::Entity;
 use crate::post_processing::{GammaCorrection, ImageFilter, PostProcess};
-use crate::vec3::Ray;
-use crate::{entity::Entity, intersection::Intersection, vec3::Vec3};
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(s: &str);
-}
-
-fn window() -> web_sys::Window {
-    web_sys::window().expect("no global `window` exists")
-}
-
-fn request_animation_frame(f: &Closure<dyn FnMut()>) {
-    window()
-        .request_animation_frame(f.as_ref().unchecked_ref())
-        .expect("should register `requestAnimationFrame` OK");
-}
+use crate::renderer;
 
 #[wasm_bindgen]
 pub struct Scene {
@@ -34,9 +14,18 @@ pub struct Scene {
     pub focal_length: u32,
     pub samples: u32,
     pub bounces: u32,
-
     pub fov: f32,
     post_processors: Vec<Rc<dyn PostProcess>>,
+}
+
+impl Scene {
+    pub fn entities(&self) -> &[Entity] {
+        &self.entities
+    }
+
+    pub fn post_processors(&self) -> &[Rc<dyn PostProcess>] {
+        &self.post_processors
+    }
 }
 
 #[wasm_bindgen]
@@ -69,164 +58,7 @@ impl Scene {
         self.post_processors.push(Rc::new(GammaCorrection::new(gamma)));
     }
 
-    fn intersection(ray: Ray, entities: Vec<Entity>) -> Option<Intersection> {
-        let intersection = entities.iter().fold(Intersection::empty(), |previous, entity| {
-            match entity.intersection(ray) {
-                Some(intersection) => Intersection::closest(intersection, previous),
-                None => previous,
-            }
-        });
-
-        match intersection {
-            Intersection { entity: None, .. } => None,
-            intersection => Some(intersection),
-        }
-    }
-
-    fn trace(ray: Ray, entities: Vec<Entity>, steps: u32) -> Vec3 {
-        if steps == 0 {
-            return Vec3::new(0.0, 0.0, 0.0);
-        }
-
-        match Self::intersection(ray, entities.clone()) {
-            Some(intersection) => {
-                let entity: Entity = intersection.entity.unwrap();
-                let material = entity.material();
-                let emitted = Vec3::from(material.emission);
-
-                let normal = intersection.normal;
-                let view_dir = (ray.direction * -1.0).normalize();
-                let cos_theta = normal.dot(view_dir).max(0.0);
-
-                let albedo = Vec3::from(material.albedo);
-                let dielectric_f0 = Vec3::new(0.04, 0.04, 0.04);
-                let f0 = Vec3::lerp(dielectric_f0, albedo, material.metallic);
-
-                let fresnel = Vec3::fresnel_schlick(f0, cos_theta);
-                let specular_prob = ((fresnel.x + fresnel.y + fresnel.z) / 3.0).clamp(0.05, 0.95);
-
-                let mut rng = rand::thread_rng();
-                let origin = intersection.point + normal * 0.001;
-
-                let (bounce_ray, brdf_weight) = if rng.gen::<f32>() < specular_prob {
-                    let reflected = ray.direction.reflect(normal);
-                    let direction = (reflected + Vec3::rng_normal() * material.roughness).normalize();
-
-                    let specular_color = Vec3::lerp(Vec3::new(1.0, 1.0, 1.0), albedo, material.metallic);
-
-                    (
-                        Ray { origin, direction },
-                        specular_color * (fresnel * (1.0 / specular_prob)),
-                    )
-                } else {
-                    let diffuse_weight = 1.0 - material.metallic;
-                    if diffuse_weight < 0.001 {
-                        return emitted;
-                    }
-
-                    let direction = (normal + Vec3::rng_hemisphere(normal)).normalize();
-                    let diffuse_prob = 1.0 - specular_prob;
-
-                    let one_minus_fresnel = Vec3::new(1.0, 1.0, 1.0) - fresnel;
-                    (
-                        Ray { origin, direction },
-                        albedo * one_minus_fresnel * (diffuse_weight / diffuse_prob),
-                    )
-                };
-
-                let incoming = Self::trace(bounce_ray, entities, steps - 1);
-                emitted + (incoming * brdf_weight)
-            }
-            _ => {
-                let unit_direction: Vec3 = ray.direction.normalize();
-                let t = 0.5 * (unit_direction.y + 1.0);
-
-                (Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t) * 175.0
-            }
-        }
-    }
-
-    fn avg_samples(samples: &[Vec<Vec<Vec3>>]) -> Vec<Vec<Vec3>> {
-        samples
-            .iter()
-            .map(|row| row.iter().map(|v| Vec3::avg(v)).collect())
-            .collect()
-    }
-
-    fn samples_to_pixel_map(samples: &[Vec<Vec3>]) -> Vec<u8> {
-        samples.iter().fold(Vec::new(), |acc: Vec<u8>, row| {
-            [
-                acc,
-                row.iter()
-                    .map(|sample| vec![sample.x as u8, sample.y as u8, sample.z as u8, 255])
-                    .fold(Vec::new(), |acc: Vec<u8>, sample| [acc, sample].concat()),
-            ]
-            .concat()
-        })
-    }
-
     pub fn render(&self, ctx: &CanvasRenderingContext2d) {
-        let half_width: i32 = (self.width / 2) as i32;
-        let half_height: i32 = (self.height / 2) as i32;
-
-        let width: u32 = self.width;
-        let height: u32 = self.height;
-        let focal_length: u32 = self.focal_length;
-        let bounces: u32 = self.bounces;
-        let entities: Vec<Entity> = self.entities.clone();
-        let sample_count: u32 = self.samples;
-        let post_processors: Vec<Rc<dyn PostProcess>> = self.post_processors.iter().map(Rc::clone).collect();
-
-        let local_context: CanvasRenderingContext2d = ctx.clone();
-
-        let origin: Vec3 = Vec3::zero();
-        let mut samples: Vec<Vec<Vec<Vec3>>> = vec![vec![vec![]; self.width as usize]; self.height as usize];
-
-        let f = Rc::new(RefCell::new(None));
-        let g = f.clone();
-        let mut s = 0;
-        *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-            if s > sample_count {
-                log("done.");
-                let _ = f.borrow_mut().take();
-                return;
-            }
-            log(&format!("Sample {}", s));
-            let mut rng = rand::thread_rng();
-            for i in 0..width as i32 {
-                for j in 0..height as i32 {
-                    let x: f32 = (i - half_width) as f32 + rng.gen_range(-0.5..0.5);
-                    let y: f32 = (j - half_height) as f32 + rng.gen_range(-0.5..0.5);
-                    let direction: Vec3 = (Vec3 {
-                        x,
-                        y,
-                        z: focal_length as f32,
-                    })
-                    .normalize();
-
-                    let res: Vec3 = Self::trace(Ray { origin, direction }, entities.clone(), bounces);
-                    samples[j as usize][i as usize].push(res);
-                }
-            }
-
-            let mut pixels: Vec<Vec<Vec3>> = Scene::avg_samples(&samples);
-
-            for pp in post_processors.clone() {
-                pixels = pp.process(pixels);
-            }
-
-            let image_data: ImageData = ImageData::new_with_u8_clamped_array_and_sh(
-                Clamped(&Scene::samples_to_pixel_map(&pixels)),
-                width,
-                height,
-            )
-            .unwrap();
-            local_context.put_image_data(&image_data, 0.0, 0.0).ok();
-
-            s += 1;
-            request_animation_frame(f.borrow().as_ref().unwrap());
-        }) as Box<dyn FnMut()>));
-
-        request_animation_frame(g.borrow().as_ref().unwrap());
+        renderer::render(self, ctx);
     }
 }
