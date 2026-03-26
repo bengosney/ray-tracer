@@ -1,4 +1,5 @@
 use rand::Rng;
+use std::ops::AddAssign;
 use wasm_bindgen::prelude::*;
 
 use std::fmt::Display;
@@ -217,6 +218,28 @@ impl Div<f32> for Vec3 {
             y: self.y / rhs,
             z: self.z / rhs,
         }
+    }
+}
+
+impl Div<u32> for Vec3 {
+    type Output = Self;
+
+    fn div(self, rhs: u32) -> Self::Output {
+        Vec3 {
+            x: self.x / rhs as f32,
+            y: self.y / rhs as f32,
+            z: self.z / rhs as f32,
+        }
+    }
+}
+
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        };
     }
 }
 
