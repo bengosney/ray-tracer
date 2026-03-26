@@ -1,16 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-use crate::{
-    intersection::Intersection,
-    rgb::Rgb,
-    vec3::{Ray, Vec3},
-};
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(s: &str);
-}
+use crate::{intersection::Intersection, material::Material, ray::Ray, rgb::Rgb, vec3::Vec3};
 
 #[wasm_bindgen()]
 #[derive(Copy, Clone, PartialEq)]
@@ -20,35 +10,20 @@ pub struct Entity {
     material: Material,
 }
 
-#[wasm_bindgen()]
-#[derive(Copy, Clone, PartialEq)]
-pub struct Shape {}
-
-#[wasm_bindgen()]
-#[derive(Copy, Clone, PartialEq)]
-pub struct Material {
-    pub emission: Rgb,
-    pub albedo: Rgb,
-    pub metallic: f32,
-    pub roughness: f32,
-}
-
 impl Entity {
     pub fn intersection(self, ray: Ray) -> Option<Intersection> {
         let sphere_ray = self.position - ray.origin;
-        let dist_sphere_ray = sphere_ray.mag();
+        let dist_sphere_ray_sq = sphere_ray.mag_squared();
         let dist_to_closest_point_on_ray = sphere_ray.dot(ray.direction);
-        let dist_from_closest_point_to_sphere = (dist_sphere_ray.powi(2) - dist_to_closest_point_on_ray.powi(2)).sqrt();
+        let dist_from_closest_sq = dist_sphere_ray_sq - dist_to_closest_point_on_ray.powi(2);
+        let radius_sq = self.radius * self.radius;
 
-        let dist_to_intersection = dist_to_closest_point_on_ray
-            - (self.radius.powi(2) - dist_from_closest_point_to_sphere.powi(2))
-                .abs()
-                .sqrt();
+        if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_sq < radius_sq {
+            let dist_to_intersection = dist_to_closest_point_on_ray - (radius_sq - dist_from_closest_sq).abs().sqrt();
 
-        let point = ray.origin + (ray.direction * dist_to_intersection);
-        let normal = (point - self.position).normalize();
+            let point = ray.origin + (ray.direction * dist_to_intersection);
+            let normal = (point - self.position).normalize();
 
-        if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
             return Some(Intersection {
                 dist: dist_to_intersection,
                 point,

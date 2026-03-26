@@ -1,16 +1,11 @@
 use rand::Rng;
+use std::ops::AddAssign;
 use wasm_bindgen::prelude::*;
 
 use std::fmt::Display;
 use std::ops::{Add, Div, Mul, Sub};
 
 use crate::rgb::Rgb;
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(s: &str);
-}
 
 #[wasm_bindgen]
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -38,7 +33,11 @@ impl Vec3 {
     }
 
     pub fn mag(&self) -> f32 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+        self.mag_squared().sqrt()
+    }
+
+    pub fn mag_squared(&self) -> f32 {
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 
     pub fn dot(&self, rhs: Self) -> f32 {
@@ -95,7 +94,7 @@ impl Vec3 {
                 rng.gen_range(-1.0..1.0),
                 rng.gen_range(-1.0..1.0),
             );
-            if vec.mag() < 1.0 {
+            if vec.mag_squared() < 1.0 {
                 return vec;
             }
         }
@@ -226,15 +225,25 @@ impl Div<f32> for Vec3 {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
-pub struct Ray {
-    pub origin: Vec3,
-    pub direction: Vec3,
+impl Div<u32> for Vec3 {
+    type Output = Self;
+
+    fn div(self, rhs: u32) -> Self::Output {
+        Vec3 {
+            x: self.x / rhs as f32,
+            y: self.y / rhs as f32,
+            z: self.z / rhs as f32,
+        }
+    }
 }
 
-impl Ray {
-    pub fn at(self, distance: f32) -> Vec3 {
-        self.origin + (self.direction * distance)
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        };
     }
 }
 
@@ -354,5 +363,168 @@ mod tests {
         ];
 
         assert_eq!(Vec3::avg(&vecs), Vec3::new(2.0, 2.0, 2.0));
+    }
+
+    #[test]
+    fn test_avg_different_values() {
+        let vecs = vec![Vec3::new(0.0, 10.0, 20.0), Vec3::new(10.0, 20.0, 40.0)];
+
+        assert_eq!(Vec3::avg(&vecs), Vec3::new(5.0, 15.0, 30.0));
+    }
+
+    #[test]
+    fn test_mag_squared() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+
+        assert_eq!(a.mag_squared(), 14.0);
+    }
+
+    #[test]
+    fn test_mag_squared_equals_mag_times_mag() {
+        let a = Vec3::new(3.0, 4.0, 5.0);
+
+        let diff = (a.mag_squared() - a.mag() * a.mag()).abs();
+        assert!(diff < 1e-5, "mag_squared should equal mag*mag, diff={}", diff);
+    }
+
+    #[test]
+    fn test_zero() {
+        let z = Vec3::zero();
+
+        assert_eq!(z, Vec3::new(0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_div_u32() {
+        let a = Vec3::new(10.0, 20.0, 30.0);
+
+        assert_eq!(a / 2u32, Vec3::new(5.0, 10.0, 15.0));
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let mut a = Vec3::new(1.0, 2.0, 3.0);
+        a += Vec3::new(10.0, 20.0, 30.0);
+
+        assert_eq!(a, Vec3::new(11.0, 22.0, 33.0));
+    }
+
+    #[test]
+    fn test_add_assign_accumulates() {
+        let mut a = Vec3::zero();
+        a += Vec3::new(1.0, 2.0, 3.0);
+        a += Vec3::new(1.0, 2.0, 3.0);
+        a += Vec3::new(1.0, 2.0, 3.0);
+
+        assert_eq!(a, Vec3::new(3.0, 6.0, 9.0));
+    }
+
+    #[test]
+    fn test_gamma_identity() {
+        // gamma of 1.0 should return the same values
+        let a = Vec3::new(128.0, 64.0, 200.0);
+        let result = a.gamma(1.0);
+
+        assert!((result.x - 128.0).abs() < 1e-3);
+        assert!((result.y - 64.0).abs() < 1e-3);
+        assert!((result.z - 200.0).abs() < 1e-3);
+    }
+
+    #[test]
+    fn test_gamma_clamps_to_range() {
+        let a = Vec3::new(300.0, -50.0, 128.0);
+        let result = a.gamma(2.2);
+
+        assert!(result.x >= 0.0 && result.x <= 255.0);
+        assert!(result.y >= 0.0 && result.y <= 255.0);
+        assert!(result.z >= 0.0 && result.z <= 255.0);
+    }
+
+    #[test]
+    fn test_lerp_at_zero() {
+        let a = Vec3::new(0.0, 0.0, 0.0);
+        let b = Vec3::new(10.0, 20.0, 30.0);
+
+        assert_eq!(Vec3::lerp(a, b, 0.0), a);
+    }
+
+    #[test]
+    fn test_lerp_at_one() {
+        let a = Vec3::new(0.0, 0.0, 0.0);
+        let b = Vec3::new(10.0, 20.0, 30.0);
+
+        assert_eq!(Vec3::lerp(a, b, 1.0), b);
+    }
+
+    #[test]
+    fn test_lerp_midpoint() {
+        let a = Vec3::new(0.0, 0.0, 0.0);
+        let b = Vec3::new(10.0, 20.0, 30.0);
+
+        assert_eq!(Vec3::lerp(a, b, 0.5), Vec3::new(5.0, 10.0, 15.0));
+    }
+
+    #[test]
+    fn test_fresnel_schlick_at_zero() {
+        // At cos_theta=1 (head-on), fresnel should return f0
+        let f0 = Vec3::new(0.04, 0.04, 0.04);
+        let result = Vec3::fresnel_schlick(f0, 1.0);
+
+        assert!((result.x - 0.04).abs() < 1e-5);
+        assert!((result.y - 0.04).abs() < 1e-5);
+        assert!((result.z - 0.04).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_fresnel_schlick_at_grazing() {
+        // At cos_theta=0 (grazing angle), fresnel should approach 1.0
+        let f0 = Vec3::new(0.04, 0.04, 0.04);
+        let result = Vec3::fresnel_schlick(f0, 0.0);
+
+        assert!((result.x - 1.0).abs() < 1e-5);
+        assert!((result.y - 1.0).abs() < 1e-5);
+        assert!((result.z - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_from_rgb() {
+        let rgb = Rgb::new(0.5, 0.6, 0.7);
+        let v: Vec3 = Vec3::from(rgb);
+
+        assert_eq!(v, Vec3::new(0.5, 0.6, 0.7));
+    }
+
+    #[test]
+    fn test_rng_in_range() {
+        for _ in 0..100 {
+            let v = Vec3::rng();
+            assert!(v.x >= -0.5 && v.x <= 0.5);
+            assert!(v.y >= -0.5 && v.y <= 0.5);
+            assert!(v.z >= -0.5 && v.z <= 0.5);
+        }
+    }
+
+    #[test]
+    fn test_rng_normal_in_unit_sphere() {
+        for _ in 0..100 {
+            let v = Vec3::rng_normal();
+            assert!(
+                v.mag() < 1.0,
+                "rng_normal should be inside unit sphere, got mag={}",
+                v.mag()
+            );
+        }
+    }
+
+    #[test]
+    fn test_rng_hemisphere_same_side_as_normal() {
+        let normal = Vec3::new(0.0, 1.0, 0.0);
+        for _ in 0..100 {
+            let v = Vec3::rng_hemisphere(normal);
+            assert!(
+                v.dot(normal) > 0.0,
+                "hemisphere vector should be on same side as normal"
+            );
+        }
     }
 }
