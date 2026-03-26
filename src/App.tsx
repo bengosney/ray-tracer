@@ -18,7 +18,12 @@ interface Sphere extends BaseObject {
   radius: number;
 }
 
-type SceneObject = Sphere;
+interface Plane extends BaseObject {
+  shape: "plane";
+  normal: Vec3;
+}
+
+type SceneObject = Sphere | Plane;
 
 interface Settings {
   width: number;
@@ -40,14 +45,13 @@ const SETTINGS: Settings = {
 
 const MAIN_Z: number = SETTINGS.focalLength / 4;
 const MAIN_SIZE: number = 25;
-const FLOOR_SIZE: number = 5000;
 
 const SCENE_DATA: SceneObject[] = [
   // floor
   {
-    shape: "sphere",
-    position: vec3(0, FLOOR_SIZE + MAIN_SIZE, MAIN_Z),
-    radius: FLOOR_SIZE,
+    shape: "plane",
+    position: vec3(0, MAIN_SIZE, 0),
+    normal: vec3(0, -1, 0),
     emission: rgb(0, 0, 0),
     albedo: rgb(0.5, 0.5, 0.5),
     metallic: 0.0,
@@ -95,21 +99,15 @@ const SCENE_DATA: SceneObject[] = [
   },
 ];
 
-const FLOOR_CENTER_Y = FLOOR_SIZE + MAIN_SIZE;
-const FLOOR_CENTER_Z = MAIN_Z;
-
 for (let i = 0; i < 25; i++) {
   const radius = 2 + Math.random() * 5;
   const x = (Math.random() - 0.5) * 200;
   const z = MAIN_Z + (Math.random() - 0.5) * 200;
-  const dx = x;
-  const dz = z - FLOOR_CENTER_Z;
-  const surfaceY = FLOOR_CENTER_Y - Math.sqrt(FLOOR_SIZE * FLOOR_SIZE - dx * dx - dz * dz);
   const metallic = Math.random() > 0.6 ? 1.0 : 0.0;
   SCENE_DATA.push({
     shape: "sphere",
     radius,
-    position: vec3(x, surfaceY - radius, z),
+    position: vec3(x, MAIN_SIZE - radius, z),
     emission: rgb(0, 0, 0),
     albedo: rgb(Math.random(), Math.random(), Math.random()),
     metallic,
@@ -136,14 +134,23 @@ function App() {
       );
 
       SCENE_DATA.forEach((obj) => {
-        const entity = new Entity(
-          new WasmVec3(obj.position.x, obj.position.y, obj.position.z),
-          new WasmRGB(obj.emission.r, obj.emission.g, obj.emission.b),
-          new WasmRGB(obj.albedo.r, obj.albedo.g, obj.albedo.b),
-          obj.metallic,
-          obj.roughness,
-          obj.radius,
-        );
+        const position = new WasmVec3(obj.position.x, obj.position.y, obj.position.z);
+        const emission = new WasmRGB(obj.emission.r, obj.emission.g, obj.emission.b);
+        const albedo = new WasmRGB(obj.albedo.r, obj.albedo.g, obj.albedo.b);
+
+        let entity: Entity;
+        if (obj.shape === "plane") {
+          entity = Entity.new_plane(
+            position,
+            new WasmVec3(obj.normal.x, obj.normal.y, obj.normal.z),
+            emission,
+            albedo,
+            obj.metallic,
+            obj.roughness,
+          );
+        } else {
+          entity = new Entity(position, emission, albedo, obj.metallic, obj.roughness, obj.radius);
+        }
         scene.add_entity(entity);
       });
 
