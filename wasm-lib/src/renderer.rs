@@ -21,6 +21,16 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) {
         .expect("should register `requestAnimationFrame` OK");
 }
 
+fn random_in_unit_disc(rng: &mut impl rand::Rng) -> (f32, f32) {
+    loop {
+        let x = rng.gen_range(-1.0..1.0);
+        let y = rng.gen_range(-1.0..1.0);
+        if x * x + y * y < 1.0 {
+            return (x, y);
+        }
+    }
+}
+
 fn avg_samples(samples: &[Vec<Vec3>], count: u32) -> Vec<Vec<Vec3>> {
     samples
         .iter()
@@ -48,6 +58,8 @@ pub fn render(scene: &Scene, ctx: &CanvasRenderingContext2d) {
     let width = scene.width;
     let height = scene.height;
     let focal_length = scene.focal_length;
+    let focal_distance = scene.focal_distance as f32;
+    let aperture = scene.appature;
     let bounces = scene.bounces;
     let entities = scene.entities().to_vec();
     let sample_count = scene.samples;
@@ -81,7 +93,24 @@ pub fn render(scene: &Scene, ctx: &CanvasRenderingContext2d) {
                 })
                 .normalize();
 
-                let res = tracer::trace(Ray { origin, direction }, &entities, bounces);
+                let focus_point = origin + direction * focal_distance;
+
+                let (jitter_x, jitter_y) = random_in_unit_disc(&mut rng);
+                let jittered_origin = Vec3 {
+                    x: origin.x + jitter_x * aperture * 0.5,
+                    y: origin.y + jitter_y * aperture * 0.5,
+                    z: origin.z,
+                };
+                let jittered_direction = (focus_point - jittered_origin).normalize();
+
+                let res = tracer::trace(
+                    Ray {
+                        origin: jittered_origin,
+                        direction: jittered_direction,
+                    },
+                    &entities,
+                    bounces,
+                );
                 samples[j as usize][i as usize] += res;
             }
         }

@@ -225,6 +225,18 @@ impl Div<f32> for Vec3 {
     }
 }
 
+impl Mul<u32> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, rhs: u32) -> Self::Output {
+        Vec3 {
+            x: self.x * rhs as f32,
+            y: self.y * rhs as f32,
+            z: self.z * rhs as f32,
+        }
+    }
+}
+
 impl Div<u32> for Vec3 {
     type Output = Self;
 

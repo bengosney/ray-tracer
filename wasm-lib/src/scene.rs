@@ -12,6 +12,8 @@ pub struct Scene {
     pub width: u32,
     pub height: u32,
     pub focal_length: u32,
+    pub focal_distance: u32,
+    pub appature: f32,
     pub samples: u32,
     pub bounces: u32,
     pub fov: f32,
@@ -31,12 +33,24 @@ impl Scene {
 #[wasm_bindgen]
 impl Scene {
     #[wasm_bindgen(constructor)]
-    pub fn new(width: u32, height: u32, focal_length: u32, samples: u32, bounces: u32, fov: f32) -> Self {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        width: u32,
+        height: u32,
+        focal_length: u32,
+        focal_distance: u32,
+        appature: f32,
+        samples: u32,
+        bounces: u32,
+        fov: f32,
+    ) -> Self {
         Self {
             entities: vec![],
             width,
             height,
             focal_length,
+            focal_distance,
+            appature,
             samples,
             bounces,
             fov,

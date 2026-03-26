@@ -24,21 +24,29 @@ interface Settings {
   width: number;
   height: number;
   focalLength: number;
+  focalDistance: number;
+  aperture: number;
   samples: number;
   bounces: number;
   fov: number;
 }
 
+const FOCAL_LENGTH = 1000;
+const FOCAL_DISTANCE = FOCAL_LENGTH / 4;
+const APERTURE = FOCAL_DISTANCE / 200;
+
 const SETTINGS: Settings = {
   width: 640,
   height: 480,
-  focalLength: 1000,
+  focalLength: FOCAL_LENGTH,
+  focalDistance: FOCAL_DISTANCE,
+  aperture: APERTURE,
   samples: 500,
   bounces: 50,
   fov: 80,
 };
 
-const MAIN_Z: number = SETTINGS.focalLength / 4;
+const MAIN_Z: number = SETTINGS.focalDistance;
 const MAIN_SIZE: number = 25;
 const FLOOR_SIZE: number = 5000;
 
@@ -130,6 +138,8 @@ function App() {
         context.canvas.width,
         context.canvas.height,
         SETTINGS.focalLength,
+        SETTINGS.focalDistance,
+        SETTINGS.aperture,
         SETTINGS.samples,
         SETTINGS.bounces,
         SETTINGS.fov,
