@@ -94,7 +94,7 @@ impl Vec3 {
                 rng.gen_range(-1.0..1.0),
                 rng.gen_range(-1.0..1.0),
             );
-            if vec.mag() < 1.0 {
+            if vec.mag_squared() < 1.0 {
                 return vec;
             }
         }
