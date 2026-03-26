@@ -15,13 +15,11 @@ impl Entity {
         let sphere_ray = self.position - ray.origin;
         let dist_sphere_ray_sq = sphere_ray.mag_squared();
         let dist_to_closest_point_on_ray = sphere_ray.dot(ray.direction);
-        let dist_from_closest_point_to_sphere = (dist_sphere_ray_sq - dist_to_closest_point_on_ray.powi(2)).sqrt();
+        let dist_from_closest_sq = dist_sphere_ray_sq - dist_to_closest_point_on_ray.powi(2);
+        let radius_sq = self.radius * self.radius;
 
-        if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
-            let dist_to_intersection = dist_to_closest_point_on_ray
-                - (self.radius.powi(2) - dist_from_closest_point_to_sphere.powi(2))
-                    .abs()
-                    .sqrt();
+        if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_sq < radius_sq {
+            let dist_to_intersection = dist_to_closest_point_on_ray - (radius_sq - dist_from_closest_sq).abs().sqrt();
 
             let point = ray.origin + (ray.direction * dist_to_intersection);
             let normal = (point - self.position).normalize();
