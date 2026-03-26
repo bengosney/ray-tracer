@@ -89,7 +89,7 @@ where
                         let i = (y as isize + u) as usize;
                         let j = (x as isize + v) as usize;
 
-                        processed[y][x] = processed[y][x] + (pixels[i][j] * f32::from(self.get_data(u, v))) / sum;
+                        processed[y][x] += (pixels[i][j] * f32::from(self.get_data(u, v))) / sum;
                     }
                 }
             }

@@ -21,7 +21,7 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) {
         .expect("should register `requestAnimationFrame` OK");
 }
 
-fn avg_samples(samples: &Vec<Vec<Vec3>>, count: u32) -> Vec<Vec<Vec3>> {
+fn avg_samples(samples: &[Vec<Vec3>], count: u32) -> Vec<Vec<Vec3>> {
     samples
         .iter()
         .map(|row| row.iter().map(|v| *v / count).collect())
@@ -87,7 +87,7 @@ pub fn render(scene: &Scene, ctx: &CanvasRenderingContext2d) {
         }
 
         s += 1;
-        let mut pixels = avg_samples(&samples, s.clone());
+        let mut pixels = avg_samples(&samples, s);
 
         for pp in post_processors.clone() {
             pixels = pp.process(pixels);
