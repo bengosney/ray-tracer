@@ -13,9 +13,9 @@ pub struct Entity {
 impl Entity {
     pub fn intersection(self, ray: Ray) -> Option<Intersection> {
         let sphere_ray = self.position - ray.origin;
-        let dist_sphere_ray = sphere_ray.mag();
+        let dist_sphere_ray_sq = sphere_ray.mag_squared();
         let dist_to_closest_point_on_ray = sphere_ray.dot(ray.direction);
-        let dist_from_closest_point_to_sphere = (dist_sphere_ray.powi(2) - dist_to_closest_point_on_ray.powi(2)).sqrt();
+        let dist_from_closest_point_to_sphere = (dist_sphere_ray_sq - dist_to_closest_point_on_ray.powi(2)).sqrt();
 
         if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_point_to_sphere < self.radius {
             let dist_to_intersection = dist_to_closest_point_on_ray
