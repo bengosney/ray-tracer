@@ -39,16 +39,22 @@ pub struct Kernel<T> {
     data: Vec<T>,
     half_range: usize,
     normalize: bool,
+    sum: f32,
 }
 
-impl<T: Copy> Kernel<T> {
+impl<T: Copy> Kernel<T>
+where
+    f32: From<T>,
+{
     pub fn new(data: Vec<T>, normalize: bool) -> Self {
         let shape = (data.len() as f32).sqrt().ceil() as usize;
+        let sum = data.iter().fold(0.0, |acc: f32, cur: &T| acc + f32::from(*cur));
         Self {
             shape,
             data,
             half_range: shape / 2,
             normalize,
+            sum,
         }
     }
 
@@ -66,20 +72,11 @@ impl<T: Copy> Kernel<T> {
 
         self.data[i + (j * self.shape)]
     }
-}
-
-impl<T: Copy> Kernel<T>
-where
-    f32: From<T>,
-{
-    pub fn sum(&self) -> f32 {
-        self.data.iter().fold(0.0, |acc: f32, cur: &T| acc + f32::from(*cur))
-    }
 
     pub fn apply(&self, pixels: Vec<Vec<Vec3>>) -> Vec<Vec<Vec3>> {
         let mut processed: Vec<Vec<Vec3>> = pixels.clone();
 
-        let sum = if self.normalize { self.sum() } else { 1.0 };
+        let sum = if self.normalize { self.sum } else { 1.0 };
 
         for y in self.vec_range(pixels.len()) {
             for x in self.vec_range(pixels[y].len()) {
