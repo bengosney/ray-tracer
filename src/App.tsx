@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import "./App.css";
-import { Vec3, vec3 } from "./utils/math";
-import { RGB, rgb } from "./utils/colour";
+import { vec3 } from "./utils/math";
+import { rgb } from "./utils/colour";
 import type { WorkerInMessage, SceneObject, WorkerSettings } from "./render.types";
 
 interface Settings extends WorkerSettings {
