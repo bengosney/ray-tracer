@@ -45,7 +45,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
         obj.roughness,
       );
     } else {
-      entity = new Entity(position, emission, albedo, obj.metallic, obj.roughness, obj.radius);
+      entity = Entity.new_sphere(position, emission, albedo, obj.metallic, obj.roughness, obj.radius);
     }
     scene.add_entity(entity);
   }
