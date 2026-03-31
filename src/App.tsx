@@ -1,39 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import "./App.css";
-import Canvas from "./Canvas";
 import { Vec3, vec3 } from "./utils/math";
 import { RGB, rgb } from "./utils/colour";
-import initWASM, { Scene, Entity, Vec3 as WasmVec3, Rgb as WasmRGB } from "wasm-lib";
+import type { WorkerInMessage, SceneObject, WorkerSettings } from "./render.types";
 
-interface BaseObject {
-  position: Vec3;
-  emission: RGB;
-  albedo: RGB;
-  metallic: number;
-  roughness: number;
-}
-
-interface Sphere extends BaseObject {
-  shape: "sphere";
-  radius: number;
-}
-
-interface Plane extends BaseObject {
-  shape: "plane";
-  normal: Vec3;
-}
-
-type SceneObject = Sphere | Plane;
-
-interface Settings {
-  width: number;
-  height: number;
-  focalLength: number;
-  focalDistance: number;
-  aperture: number;
-  samples: number;
-  bounces: number;
-  fov: number;
+interface Settings extends WorkerSettings {
+  gamma: number;
 }
 
 const FOCAL_LENGTH = 1000;
@@ -49,6 +21,7 @@ const SETTINGS: Settings = {
   samples: 500,
   bounces: 50,
   fov: 80,
+  gamma: 2.2,
 };
 
 const MAIN_Z: number = SETTINGS.focalDistance;
@@ -123,61 +96,38 @@ for (let i = 0; i < 25; i++) {
   });
 }
 
+function startRender(canvas: HTMLCanvasElement): Worker {
+  const worker = new Worker(new URL("./renderer.worker.ts", import.meta.url));
+  const offscreen = canvas.transferControlToOffscreen();
+  worker.onerror = (e) => console.error("worker error:", e);
+
+  const msg: WorkerInMessage = {
+    type: "start",
+    canvas: offscreen,
+    settings: SETTINGS,
+    entities: SCENE_DATA,
+    gamma: SETTINGS.gamma,
+  };
+  worker.postMessage(msg, [offscreen]);
+
+  return worker;
+}
+
 function App() {
-  const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
+  const workerRef = useRef<Worker | null>(null);
 
-  useEffect(() => {
-    if (!context) return;
-
-    const renderScene = async () => {
-      await initWASM();
-
-      const scene = new Scene(
-        context.canvas.width,
-        context.canvas.height,
-        SETTINGS.focalLength,
-        SETTINGS.focalDistance,
-        SETTINGS.aperture,
-        SETTINGS.samples,
-        SETTINGS.bounces,
-        SETTINGS.fov,
-      );
-
-      SCENE_DATA.forEach((obj) => {
-        const position = new WasmVec3(obj.position.x, obj.position.y, obj.position.z);
-        const emission = new WasmRGB(obj.emission.r, obj.emission.g, obj.emission.b);
-        const albedo = new WasmRGB(obj.albedo.r, obj.albedo.g, obj.albedo.b);
-
-        let entity: Entity;
-        if (obj.shape === "plane") {
-          entity = Entity.new_plane(
-            position,
-            new WasmVec3(obj.normal.x, obj.normal.y, obj.normal.z),
-            emission,
-            albedo,
-            obj.metallic,
-            obj.roughness,
-          );
-        } else {
-          entity = new Entity(position, emission, albedo, obj.metallic, obj.roughness, obj.radius);
-        }
-        scene.add_entity(entity);
-      });
-
-      scene.set_gamma_correction(2.2);
-      scene.render(context);
-    };
-
-    renderScene();
-  }, [context]);
-
-  const onCanvasInit = useCallback((ctx: CanvasRenderingContext2D) => {
-    setContext(ctx);
-  }, []);
+  const canvasRefCallback = (canvas: HTMLCanvasElement | null) => {
+    if (!canvas) return;
+    if (workerRef.current) {
+      workerRef.current.terminate();
+      workerRef.current = null;
+    }
+    workerRef.current = startRender(canvas);
+  };
 
   return (
     <div className="App">
-      <Canvas animating={false} width={SETTINGS.width} height={SETTINGS.height} init={onCanvasInit} frame={() => {}} />
+      <canvas ref={canvasRefCallback} width={SETTINGS.width} height={SETTINGS.height} />
     </div>
   );
 }

@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
-use web_sys::{CanvasRenderingContext2d, ImageData};
+use web_sys::{ImageData, OffscreenCanvasRenderingContext2d};
 
 use crate::log;
 use crate::post_processing::PostProcess;
@@ -11,14 +11,10 @@ use crate::scene::Scene;
 use crate::tracer;
 use crate::vec3::Vec3;
 
-fn window() -> web_sys::Window {
-    web_sys::window().expect("no global `window` exists")
-}
-
-fn request_animation_frame(f: &Closure<dyn FnMut()>) {
-    window()
-        .request_animation_frame(f.as_ref().unchecked_ref())
-        .expect("should register `requestAnimationFrame` OK");
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_name = "requestAnimationFrame")]
+    fn request_animation_frame(closure: &Closure<dyn FnMut()>) -> i32;
 }
 
 fn random_in_unit_disc(rng: &mut impl rand::Rng) -> (f32, f32) {
@@ -51,7 +47,7 @@ fn samples_to_pixel_map(samples: &[Vec<Vec3>]) -> Vec<u8> {
     pixels
 }
 
-pub fn render(scene: &Scene, ctx: &CanvasRenderingContext2d) {
+pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
     let half_width = (scene.width / 2) as i32;
     let half_height = (scene.height / 2) as i32;
 

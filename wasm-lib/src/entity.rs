@@ -76,8 +76,8 @@ impl Entity {
 
 #[wasm_bindgen]
 impl Entity {
-    #[wasm_bindgen(constructor)]
-    pub fn new(position: Vec3, emission: Rgb, albedo: Rgb, metallic: f32, roughness: f32, radius: f32) -> Self {
+    //#[wasm_bindgen(constructor)]
+    pub fn new_sphere(position: Vec3, emission: Rgb, albedo: Rgb, metallic: f32, roughness: f32, radius: f32) -> Self {
         Self {
             position,
             shape: Shape::Sphere { radius },

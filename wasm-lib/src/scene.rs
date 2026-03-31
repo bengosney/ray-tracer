@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
-use web_sys::CanvasRenderingContext2d;
+use web_sys::OffscreenCanvasRenderingContext2d;
 
 use crate::entity::Entity;
 use crate::post_processing::{GammaCorrection, ImageFilter, PostProcess};
@@ -72,7 +72,7 @@ impl Scene {
         self.post_processors.push(Rc::new(GammaCorrection::new(gamma)));
     }
 
-    pub fn render(&self, ctx: &CanvasRenderingContext2d) {
+    pub fn render(&self, ctx: &OffscreenCanvasRenderingContext2d) {
         renderer::render(self, ctx);
     }
 }
