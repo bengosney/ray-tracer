@@ -4,6 +4,9 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{ImageData, OffscreenCanvasRenderingContext2d};
 
+use rand::rngs::SmallRng;
+use rand::SeedableRng;
+
 use crate::log;
 use crate::post_processing::PostProcess;
 use crate::ray::Ray;
@@ -76,7 +79,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
             return;
         }
         log(&format!("Sample {}", s));
-        let mut rng = rand::thread_rng();
+        let mut rng = SmallRng::from_entropy();
         for i in 0..width as i32 {
             for j in 0..height as i32 {
                 use rand::Rng;
@@ -106,6 +109,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
                     },
                     &entities,
                     bounces,
+                    &mut rng,
                 );
                 samples[j as usize][i as usize] += res;
             }
