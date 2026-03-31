@@ -108,10 +108,7 @@ function startRender(canvas: HTMLCanvasElement): Worker {
     entities: SCENE_DATA,
     gamma: SETTINGS.gamma,
   };
-  setTimeout(() => {
-    console.log("starting");
-    worker.postMessage(msg, [offscreen]);
-  }, 500);
+  worker.postMessage(msg, [offscreen]);
 
   return worker;
 }
