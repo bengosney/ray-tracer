@@ -75,9 +75,7 @@ impl Vec3 {
         )
     }
 
-    pub fn rng() -> Self {
-        let mut rng = rand::thread_rng();
-
+    pub fn rng(rng: &mut impl Rng) -> Self {
         Vec3::new(
             rng.gen_range(-0.5..0.5),
             rng.gen_range(-0.5..0.5),
@@ -85,9 +83,7 @@ impl Vec3 {
         )
     }
 
-    pub fn rng_normal() -> Self {
-        let mut rng = rand::thread_rng();
-
+    pub fn rng_normal(rng: &mut impl Rng) -> Self {
         loop {
             let vec = Vec3::new(
                 rng.gen_range(-1.0..1.0),
@@ -100,8 +96,8 @@ impl Vec3 {
         }
     }
 
-    pub fn rng_hemisphere(normal: Vec3) -> Self {
-        let v = Self::rng_normal().normalize();
+    pub fn rng_hemisphere(normal: Vec3, rng: &mut impl Rng) -> Self {
+        let v = Self::rng_normal(rng).normalize();
         if v.dot(normal) > 0.0 {
             v
         } else {
@@ -508,8 +504,9 @@ mod tests {
 
     #[test]
     fn test_rng_in_range() {
+        let mut rng = rand::thread_rng();
         for _ in 0..100 {
-            let v = Vec3::rng();
+            let v = Vec3::rng(&mut rng);
             assert!(v.x >= -0.5 && v.x <= 0.5);
             assert!(v.y >= -0.5 && v.y <= 0.5);
             assert!(v.z >= -0.5 && v.z <= 0.5);
@@ -518,8 +515,9 @@ mod tests {
 
     #[test]
     fn test_rng_normal_in_unit_sphere() {
+        let mut rng = rand::thread_rng();
         for _ in 0..100 {
-            let v = Vec3::rng_normal();
+            let v = Vec3::rng_normal(&mut rng);
             assert!(
                 v.mag() < 1.0,
                 "rng_normal should be inside unit sphere, got mag={}",
@@ -530,9 +528,10 @@ mod tests {
 
     #[test]
     fn test_rng_hemisphere_same_side_as_normal() {
+        let mut rng = rand::thread_rng();
         let normal = Vec3::new(0.0, 1.0, 0.0);
         for _ in 0..100 {
-            let v = Vec3::rng_hemisphere(normal);
+            let v = Vec3::rng_hemisphere(normal, &mut rng);
             assert!(
                 v.dot(normal) > 0.0,
                 "hemisphere vector should be on same side as normal"
