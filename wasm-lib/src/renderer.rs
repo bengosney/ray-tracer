@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::rc::Rc;
+use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{ImageData, OffscreenCanvasRenderingContext2d};
 
@@ -8,6 +10,12 @@ use crate::ray::Ray;
 use crate::scene::Scene;
 use crate::tracer;
 use crate::vec3::Vec3;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_name = "requestAnimationFrame")]
+    fn request_animation_frame(closure: &Closure<dyn FnMut()>) -> i32;
+}
 
 fn random_in_unit_disc(rng: &mut impl rand::Rng) -> (f32, f32) {
     loop {
@@ -53,10 +61,20 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
     let sample_count = scene.samples;
     let post_processors: Vec<Rc<dyn PostProcess>> = scene.post_processors().iter().map(Rc::clone).collect();
 
+    let local_context = ctx.clone();
+
     let origin = Vec3::zero();
     let mut samples: Vec<Vec<Vec3>> = vec![vec![Vec3::new(0.0, 0.0, 0.0); width as usize]; height as usize];
 
-    for s in 1..=sample_count {
+    let f = Rc::new(RefCell::new(None));
+    let g = f.clone();
+    let mut s = 0;
+    *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+        if s > sample_count {
+            log("done.");
+            let _ = f.borrow_mut().take();
+            return;
+        }
         log(&format!("Sample {}", s));
         let mut rng = rand::thread_rng();
         for i in 0..width as i32 {
@@ -93,6 +111,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
             }
         }
 
+        s += 1;
         let mut pixels = avg_samples(&samples, s);
 
         for pp in post_processors.clone() {
@@ -102,10 +121,12 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
         let image_data =
             ImageData::new_with_u8_clamped_array_and_sh(Clamped(&samples_to_pixel_map(&pixels)), width, height)
                 .unwrap();
-        ctx.put_image_data(&image_data, 0.0, 0.0).ok();
-    }
+        local_context.put_image_data(&image_data, 0.0, 0.0).ok();
 
-    log("done.");
+        request_animation_frame(f.borrow().as_ref().unwrap());
+    }) as Box<dyn FnMut()>));
+
+    request_animation_frame(g.borrow().as_ref().unwrap());
 }
 
 #[cfg(test)]
