@@ -35,7 +35,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
     const albedo = new WasmRGB(obj.albedo.r, obj.albedo.g, obj.albedo.b);
 
     let entity: Entity;
-    if (obj.shape === "plane" && obj.normal) {
+    if (obj.shape === "plane") {
       entity = Entity.new_plane(
         position,
         new WasmVec3(obj.normal.x, obj.normal.y, obj.normal.z),
@@ -45,7 +45,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
         obj.roughness,
       );
     } else {
-      entity = new Entity(position, emission, albedo, obj.metallic, obj.roughness, obj.radius ?? 1);
+      entity = new Entity(position, emission, albedo, obj.metallic, obj.roughness, obj.radius);
     }
     scene.add_entity(entity);
   }

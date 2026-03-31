@@ -2,27 +2,7 @@ import { useEffect, useRef } from "react";
 import "./App.css";
 import { Vec3, vec3 } from "./utils/math";
 import { RGB, rgb } from "./utils/colour";
-import type { WorkerInMessage, WorkerOutMessage, SceneEntity, WorkerSettings } from "./render.types";
-
-interface BaseObject {
-  position: Vec3;
-  emission: RGB;
-  albedo: RGB;
-  metallic: number;
-  roughness: number;
-}
-
-interface Sphere extends BaseObject {
-  shape: "sphere";
-  radius: number;
-}
-
-interface Plane extends BaseObject {
-  shape: "plane";
-  normal: Vec3;
-}
-
-type SceneObject = Sphere | Plane;
+import type { WorkerInMessage, SceneObject, WorkerSettings } from "./render.types";
 
 interface Settings extends WorkerSettings {
   gamma: number;
@@ -116,25 +96,6 @@ for (let i = 0; i < 25; i++) {
   });
 }
 
-function toSceneEntities(objects: SceneObject[]): SceneEntity[] {
-  return objects.map((obj) => {
-    const base: SceneEntity = {
-      shape: obj.shape,
-      position: obj.position,
-      emission: obj.emission,
-      albedo: obj.albedo,
-      metallic: obj.metallic,
-      roughness: obj.roughness,
-    };
-    if (obj.shape === "sphere") {
-      base.radius = obj.radius;
-    } else if (obj.shape === "plane") {
-      base.normal = obj.normal;
-    }
-    return base;
-  });
-}
-
 function startRender(canvas: HTMLCanvasElement): Worker {
   const worker = new Worker(new URL("./renderer.worker.ts", import.meta.url));
   const offscreen = canvas.transferControlToOffscreen();
@@ -144,7 +105,7 @@ function startRender(canvas: HTMLCanvasElement): Worker {
     type: "start",
     canvas: offscreen,
     settings: SETTINGS,
-    entities: toSceneEntities(SCENE_DATA),
+    entities: SCENE_DATA,
     gamma: SETTINGS.gamma,
   };
   setTimeout(() => {
