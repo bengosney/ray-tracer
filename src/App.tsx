@@ -18,7 +18,7 @@ const SETTINGS: Settings = {
   focalLength: FOCAL_LENGTH,
   focalDistance: FOCAL_DISTANCE,
   aperture: APERTURE,
-  samples: 5,
+  samples: 500,
   bounces: 50,
   fov: 80,
   gamma: 2.2,
