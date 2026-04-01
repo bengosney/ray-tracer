@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import "./App.css";
-import { vec3 } from "./utils/math";
+import { vec3, mag, sub } from "./utils/math";
 import { rgb } from "./utils/colour";
 import type { WorkerInMessage, SceneObject, WorkerSettings } from "./render.types";
 
@@ -37,6 +37,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(0.5, 0.5, 0.5),
     metallic: 0.0,
     roughness: 1.0,
+    transmission: 0.0,
+    ior: 1.5,
   },
   // center
   {
@@ -44,9 +46,11 @@ const SCENE_DATA: SceneObject[] = [
     radius: MAIN_SIZE,
     position: vec3(0, 0, MAIN_Z),
     emission: rgb(0, 0, 0),
-    albedo: rgb(0.5, 0.5, 0.5),
+    albedo: rgb(0.9, 0.9, 0.9),
     metallic: 0.0,
-    roughness: 1.0,
+    roughness: 0,
+    transmission: 1.0,
+    ior: 1.5,
   },
   // red light
   {
@@ -57,6 +61,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(1.0, 0.0, 0.0),
     metallic: 0.0,
     roughness: 1.0,
+    transmission: 0.0,
+    ior: 1.5,
   },
   // back
   {
@@ -67,6 +73,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(0.6, 0.92, 0.2),
     metallic: 1.0,
     roughness: 0.1,
+    transmission: 0.0,
+    ior: 1.5,
   },
   // forword
   {
@@ -77,23 +85,47 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(0.1, 0.3, 1.0),
     metallic: 0.0,
     roughness: 0.2,
+    transmission: 0.0,
+    ior: 1.5,
   },
 ];
 
 for (let i = 0; i < 25; i++) {
-  const radius = 2 + Math.random() * 5;
-  const x = (Math.random() - 0.5) * 200;
-  const z = MAIN_Z + (Math.random() - 0.5) * 200;
-  const metallic = Math.random() > 0.6 ? 1.0 : 0.0;
-  SCENE_DATA.push({
-    shape: "sphere",
-    radius,
-    position: vec3(x, MAIN_SIZE - radius, z),
-    emission: rgb(0, 0, 0),
-    albedo: rgb(Math.random(), Math.random(), Math.random()),
-    metallic,
-    roughness: Math.random(),
-  });
+  for (let attempts = 0; attempts < 100; attempts++) {
+    const radius = 2 + Math.random() * 5;
+    const x = (Math.random() - 0.5) * 150;
+    const z = MAIN_Z + (Math.random() - 0.5) * 150;
+    const position = vec3(x, MAIN_SIZE - radius, z);
+
+    let isIntersecting = false;
+    for (const obj of SCENE_DATA) {
+      if (obj.shape === "sphere") {
+        if (mag(sub(position, obj.position)) < radius + obj.radius) {
+          isIntersecting = true;
+          break;
+        }
+      }
+    }
+
+    if (!isIntersecting) {
+      const metallic = Math.random() > 0.6 ? 1.0 : 0.0;
+      const transmission = !metallic && Math.random() > 0.7 ? 1.0 : 0.0;
+
+      SCENE_DATA.push({
+        shape: "sphere",
+        radius,
+        position,
+        emission: rgb(0, 0, 0),
+        albedo: rgb(Math.random(), Math.random(), Math.random()),
+        metallic,
+        roughness: Math.random(),
+        transmission,
+        ior: 1.5,
+      });
+
+      break;
+    }
+  }
 }
 
 function startRender(canvas: HTMLCanvasElement): Worker {

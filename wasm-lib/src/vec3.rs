@@ -59,6 +59,23 @@ impl Vec3 {
     pub fn reflect(&self, normal: Self) -> Self {
         *self - (normal * 2.0 * self.dot(normal))
     }
+
+    pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f32) -> Option<Vec3> {
+        let cos_theta = (uv * -1.0).dot(n).min(1.0);
+        let sin2_theta = 1.0 - cos_theta * cos_theta;
+        let sin2_theta_t = etai_over_etat * etai_over_etat * sin2_theta;
+        if sin2_theta_t > 1.0 {
+            return None;
+        }
+        let cos_theta_t = (1.0 - sin2_theta_t).sqrt();
+        Some(uv * etai_over_etat + n * (etai_over_etat * cos_theta - cos_theta_t))
+    }
+
+    pub fn reflectance(cos_theta: f32, ref_idx: f32) -> f32 {
+        let mut r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
+        r0 = r0 * r0;
+        r0 + (1.0 - r0) * (1.0 - cos_theta).powi(5)
+    }
 }
 
 impl Vec3 {
