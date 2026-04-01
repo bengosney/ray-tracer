@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import { vec3 } from "./utils/math";
 import { rgb } from "./utils/colour";
@@ -96,25 +96,25 @@ for (let i = 0; i < 25; i++) {
   });
 }
 
-function startRender(canvas: HTMLCanvasElement): Worker {
+function startRender(canvas: OffscreenCanvas): Worker {
   const worker = new Worker(new URL("./renderer.worker.ts", import.meta.url));
-  const offscreen = canvas.transferControlToOffscreen();
   worker.onerror = (e) => console.error("worker error:", e);
 
   const msg: WorkerInMessage = {
     type: "start",
-    canvas: offscreen,
+    canvas: canvas,
     settings: SETTINGS,
     entities: SCENE_DATA,
     gamma: SETTINGS.gamma,
   };
-  worker.postMessage(msg, [offscreen]);
+  worker.postMessage(msg, [canvas]);
 
   return worker;
 }
 
 function App() {
   const workerRef = useRef<Worker | null>(null);
+  const offscreenCanvas = useRef<OffscreenCanvas | null>(null);
 
   const canvasRefCallback = (canvas: HTMLCanvasElement | null) => {
     if (!canvas) return;
@@ -122,7 +122,12 @@ function App() {
       workerRef.current.terminate();
       workerRef.current = null;
     }
-    workerRef.current = startRender(canvas);
+
+    if (!offscreenCanvas.current) {
+      offscreenCanvas.current = canvas.transferControlToOffscreen();
+    }
+
+    workerRef.current = startRender(offscreenCanvas.current);
   };
 
   return (
