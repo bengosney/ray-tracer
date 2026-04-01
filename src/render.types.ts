@@ -7,6 +7,8 @@ interface BaseObject {
   albedo: RGB;
   metallic: number;
   roughness: number;
+  transmission: number;
+  ior: number;
 }
 
 export interface Sphere extends BaseObject {

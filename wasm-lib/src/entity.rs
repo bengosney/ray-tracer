@@ -25,27 +25,37 @@ impl Entity {
     }
 
     fn intersect_sphere(self, ray: Ray, radius: f32) -> Option<Intersection> {
-        let sphere_ray = self.position - ray.origin;
-        let dist_sphere_ray_sq = sphere_ray.mag_squared();
-        let dist_to_closest_point_on_ray = sphere_ray.dot(ray.direction);
-        let dist_from_closest_sq = dist_sphere_ray_sq - dist_to_closest_point_on_ray.powi(2);
-        let radius_sq = radius * radius;
+        let origin_to_center = ray.origin - self.position;
+        let a = ray.direction.mag_squared();
+        let half_b = origin_to_center.dot(ray.direction);
+        let c = origin_to_center.mag_squared() - radius * radius;
 
-        if dist_to_closest_point_on_ray > 0.0 && dist_from_closest_sq < radius_sq {
-            let dist_to_intersection = dist_to_closest_point_on_ray - (radius_sq - dist_from_closest_sq).abs().sqrt();
+        let discriminant = half_b * half_b - a * c;
 
-            let point = ray.origin + (ray.direction * dist_to_intersection);
-            let normal = (point - self.position).normalize();
-
-            return Some(Intersection {
-                dist: dist_to_intersection,
-                point,
-                normal,
-                entity: Some(self),
-            });
+        if discriminant < 0.0 {
+            return None;
         }
 
-        None
+        let sqrt_d = discriminant.sqrt();
+        let mut t = (-half_b - sqrt_d) / a;
+
+        if t < 0.001 {
+            t = (-half_b + sqrt_d) / a;
+        }
+
+        if t < 0.001 {
+            return None;
+        }
+
+        let point = ray.origin + (ray.direction * t);
+        let normal = (point - self.position).normalize();
+
+        Some(Intersection {
+            dist: t,
+            point,
+            normal,
+            entity: Some(self),
+        })
     }
 
     fn intersect_plane(self, ray: Ray, normal: Vec3) -> Option<Intersection> {
@@ -76,8 +86,17 @@ impl Entity {
 
 #[wasm_bindgen]
 impl Entity {
-    //#[wasm_bindgen(constructor)]
-    pub fn new_sphere(position: Vec3, emission: Rgb, albedo: Rgb, metallic: f32, roughness: f32, radius: f32) -> Self {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_sphere(
+        position: Vec3,
+        emission: Rgb,
+        albedo: Rgb,
+        metallic: f32,
+        roughness: f32,
+        transmission: f32,
+        ior: f32,
+        radius: f32,
+    ) -> Self {
         Self {
             position,
             shape: Shape::Sphere { radius },
@@ -86,11 +105,23 @@ impl Entity {
                 albedo,
                 metallic,
                 roughness,
+                transmission,
+                ior,
             },
         }
     }
 
-    pub fn new_plane(position: Vec3, normal: Vec3, emission: Rgb, albedo: Rgb, metallic: f32, roughness: f32) -> Self {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_plane(
+        position: Vec3,
+        normal: Vec3,
+        emission: Rgb,
+        albedo: Rgb,
+        metallic: f32,
+        roughness: f32,
+        transmission: f32,
+        ior: f32,
+    ) -> Self {
         Self {
             position,
             shape: Shape::Plane {
@@ -101,6 +132,8 @@ impl Entity {
                 albedo,
                 metallic,
                 roughness,
+                transmission,
+                ior,
             },
         }
     }

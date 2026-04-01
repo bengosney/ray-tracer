@@ -16,9 +16,27 @@ const createEntity = (obj: SceneObject): Entity => {
   switch (shape) {
     case "plane":
       const normal = new WasmVec3(obj.normal.x, obj.normal.y, obj.normal.z);
-      return Entity.new_plane(position, normal, emission, albedo, obj.metallic, obj.roughness);
+      return Entity.new_plane(
+        position,
+        normal,
+        emission,
+        albedo,
+        obj.metallic,
+        obj.roughness,
+        obj.transmission,
+        obj.ior,
+      );
     case "sphere":
-      return Entity.new_sphere(position, emission, albedo, obj.metallic, obj.roughness, obj.radius);
+      return Entity.new_sphere(
+        position,
+        emission,
+        albedo,
+        obj.metallic,
+        obj.roughness,
+        obj.transmission,
+        obj.ior,
+        obj.radius,
+      );
     default:
       return exhaustiveMatchGuard(`unknow shapre: ${shape}`);
   }

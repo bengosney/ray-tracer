@@ -37,6 +37,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(0.5, 0.5, 0.5),
     metallic: 0.0,
     roughness: 1.0,
+    transmission: 0.0,
+    ior: 1.5,
   },
   // center
   {
@@ -44,9 +46,11 @@ const SCENE_DATA: SceneObject[] = [
     radius: MAIN_SIZE,
     position: vec3(0, 0, MAIN_Z),
     emission: rgb(0, 0, 0),
-    albedo: rgb(0.5, 0.5, 0.5),
+    albedo: rgb(0.9, 0.9, 0.9),
     metallic: 0.0,
-    roughness: 1.0,
+    roughness: 0,
+    transmission: 1.0,
+    ior: 1.5,
   },
   // red light
   {
@@ -57,6 +61,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(1.0, 0.0, 0.0),
     metallic: 0.0,
     roughness: 1.0,
+    transmission: 0.0,
+    ior: 1.5,
   },
   // back
   {
@@ -67,6 +73,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(0.6, 0.92, 0.2),
     metallic: 1.0,
     roughness: 0.1,
+    transmission: 0.0,
+    ior: 1.5,
   },
   // forword
   {
@@ -77,6 +85,8 @@ const SCENE_DATA: SceneObject[] = [
     albedo: rgb(0.1, 0.3, 1.0),
     metallic: 0.0,
     roughness: 0.2,
+    transmission: 0.0,
+    ior: 1.5,
   },
 ];
 
@@ -85,6 +95,7 @@ for (let i = 0; i < 25; i++) {
   const x = (Math.random() - 0.5) * 200;
   const z = MAIN_Z + (Math.random() - 0.5) * 200;
   const metallic = Math.random() > 0.6 ? 1.0 : 0.0;
+  const transmission = !metallic && Math.random() > 0.7 ? 1.0 : 0.0;
   SCENE_DATA.push({
     shape: "sphere",
     radius,
@@ -93,6 +104,8 @@ for (let i = 0; i < 25; i++) {
     albedo: rgb(Math.random(), Math.random(), Math.random()),
     metallic,
     roughness: Math.random(),
+    transmission,
+    ior: 1.5,
   });
 }
 

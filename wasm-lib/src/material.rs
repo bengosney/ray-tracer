@@ -9,4 +9,6 @@ pub struct Material {
     pub albedo: Rgb,
     pub metallic: f32,
     pub roughness: f32,
+    pub transmission: f32,
+    pub ior: f32,
 }

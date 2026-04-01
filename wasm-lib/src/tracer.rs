@@ -36,43 +36,85 @@ pub fn trace(ray: Ray, entities: &[Entity], steps: u32, rng: &mut impl Rng) -> V
             let material = entity.material();
             let emitted = Vec3::from(material.emission);
 
-            let normal = intersection.normal;
-            let view_dir = (ray.direction * -1.0).normalize();
-            let cos_theta = normal.dot(view_dir).max(0.0);
+            let mut normal = intersection.normal;
+            let mut ni_over_nt = 1.0 / material.ior;
+            let mut cos_theta = (ray.direction * -1.0).dot(normal);
+
+            if cos_theta < 0.0 {
+                // Ray is inside the object, flip normal and IOR
+                normal = normal * -1.0;
+                cos_theta = -cos_theta;
+                ni_over_nt = material.ior;
+            } else {
+                cos_theta = cos_theta.min(1.0);
+            }
 
             let albedo = Vec3::from(material.albedo);
-            let dielectric_f0 = Vec3::new(0.04, 0.04, 0.04);
-            let f0 = Vec3::lerp(dielectric_f0, albedo, material.metallic);
+            let r = rng.gen::<f32>();
 
-            let fresnel = Vec3::fresnel_schlick(f0, cos_theta);
-            let specular_prob = ((fresnel.x + fresnel.y + fresnel.z) / 3.0).clamp(0.05, 0.95);
+            let (bounce_ray, brdf_weight) = if material.transmission > 0.0 {
+                // Handle Dielectric (Glass/Transparent)
+                let reflectance = Vec3::reflectance(cos_theta, ni_over_nt);
 
-            let origin = intersection.point + normal * 0.001;
-
-            let (bounce_ray, brdf_weight) = if rng.gen::<f32>() < specular_prob {
-                let reflected = ray.direction.reflect(normal);
-                let direction = (reflected + Vec3::rng_normal(rng) * material.roughness).normalize();
-
-                let specular_color = Vec3::lerp(Vec3::new(1.0, 1.0, 1.0), albedo, material.metallic);
-
-                (
-                    Ray { origin, direction },
-                    specular_color * (fresnel * (1.0 / specular_prob)),
-                )
-            } else {
-                let diffuse_weight = 1.0 - material.metallic;
-                if diffuse_weight < 0.001 {
-                    return emitted;
+                if r < reflectance {
+                    // Reflection
+                    let reflected = ray.direction.reflect(normal);
+                    let direction = (reflected + Vec3::rng_normal(rng) * material.roughness).normalize();
+                    let origin = intersection.point + normal * 0.001;
+                    (Ray { origin, direction }, Vec3::new(1.0, 1.0, 1.0))
+                } else {
+                    // Refraction (Transmission)
+                    let refracted = Vec3::refract(ray.direction, normal, ni_over_nt);
+                    match refracted {
+                        Some(refracted_dir) => {
+                            let direction = (refracted_dir + Vec3::rng_normal(rng) * material.roughness).normalize();
+                            let origin = intersection.point - normal * 0.001;
+                            (Ray { origin, direction }, albedo)
+                        }
+                        None => {
+                            // Total Internal Reflection
+                            let reflected = ray.direction.reflect(normal);
+                            let direction = (reflected + Vec3::rng_normal(rng) * material.roughness).normalize();
+                            let origin = intersection.point + normal * 0.001;
+                            (Ray { origin, direction }, Vec3::new(1.0, 1.0, 1.0))
+                        }
+                    }
                 }
+            } else {
+                // Handle Metallic/Diffuse
+                let f0_dielectric = Vec3::new(0.04, 0.04, 0.04);
+                let f0 = Vec3::lerp(f0_dielectric, albedo, material.metallic);
+                let fresnel = Vec3::fresnel_schlick(f0, cos_theta);
+                let reflectance = ((fresnel.x + fresnel.y + fresnel.z) / 3.0).clamp(0.05, 0.95);
 
-                let direction = (normal + Vec3::rng_hemisphere(normal, rng)).normalize();
-                let diffuse_prob = 1.0 - specular_prob;
+                if r < reflectance {
+                    // Specular Reflection
+                    let reflected = ray.direction.reflect(normal);
+                    let direction = (reflected + Vec3::rng_normal(rng) * material.roughness).normalize();
+                    let origin = intersection.point + normal * 0.001;
 
-                let one_minus_fresnel = Vec3::new(1.0, 1.0, 1.0) - fresnel;
-                (
-                    Ray { origin, direction },
-                    albedo * one_minus_fresnel * (diffuse_weight / diffuse_prob),
-                )
+                    let specular_color = Vec3::lerp(Vec3::new(1.0, 1.0, 1.0), albedo, material.metallic);
+                    (
+                        Ray { origin, direction },
+                        specular_color * (fresnel * (1.0 / reflectance)),
+                    )
+                } else {
+                    // Diffuse Reflection
+                    let diffuse_weight = 1.0 - material.metallic;
+                    if diffuse_weight < 0.001 {
+                        return emitted;
+                    }
+
+                    let direction = (normal + Vec3::rng_hemisphere(normal, rng)).normalize();
+                    let origin = intersection.point + normal * 0.001;
+                    let diffuse_prob = 1.0 - reflectance;
+
+                    let one_minus_fresnel = Vec3::new(1.0, 1.0, 1.0) - fresnel;
+                    (
+                        Ray { origin, direction },
+                        albedo * one_minus_fresnel * (diffuse_weight / diffuse_prob),
+                    )
+                }
             };
 
             let incoming = trace(bounce_ray, entities, steps - 1, rng);
