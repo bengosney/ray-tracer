@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-use crate::{intersection::Intersection, material::Material, ray::Ray, rgb::Rgb, vec3::Vec3};
+use crate::{intersection::Intersection, material::Material, ray::Ray, vec3::Vec3};
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum Shape {
@@ -86,55 +86,22 @@ impl Entity {
 
 #[wasm_bindgen]
 impl Entity {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new_sphere(
-        position: Vec3,
-        emission: Rgb,
-        albedo: Rgb,
-        metallic: f32,
-        roughness: f32,
-        transmission: f32,
-        ior: f32,
-        radius: f32,
-    ) -> Self {
+    //#[wasm_bindgen(constructor)]
+    pub fn new_sphere(position: Vec3, material: Material, radius: f32) -> Self {
         Self {
             position,
             shape: Shape::Sphere { radius },
-            material: Material {
-                emission,
-                albedo,
-                metallic,
-                roughness,
-                transmission,
-                ior,
-            },
+            material,
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
-    pub fn new_plane(
-        position: Vec3,
-        normal: Vec3,
-        emission: Rgb,
-        albedo: Rgb,
-        metallic: f32,
-        roughness: f32,
-        transmission: f32,
-        ior: f32,
-    ) -> Self {
+    pub fn new_plane(position: Vec3, material: Material, normal: Vec3) -> Self {
         Self {
             position,
             shape: Shape::Plane {
                 normal: normal.normalize(),
             },
-            material: Material {
-                emission,
-                albedo,
-                metallic,
-                roughness,
-                transmission,
-                ior,
-            },
+            material,
         }
     }
 }

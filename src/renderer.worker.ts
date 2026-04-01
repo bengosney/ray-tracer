@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-globals */
-import initWASM, { Scene, Entity, Vec3 as WasmVec3, Rgb as WasmRGB } from "wasm-lib";
+import initWASM, { Scene, Entity, Vec3 as WasmVec3, Rgb as WasmRGB, Material } from "wasm-lib";
 import type { SceneObject, WorkerInMessage } from "./render.types";
 import { exhaustiveMatchGuard } from "./utils/typeguard";
 
@@ -9,34 +9,23 @@ const ctx = self as unknown as Worker;
 
 const createEntity = (obj: SceneObject): Entity => {
   const position = new WasmVec3(obj.position.x, obj.position.y, obj.position.z);
-  const emission = new WasmRGB(obj.emission.r, obj.emission.g, obj.emission.b);
-  const albedo = new WasmRGB(obj.albedo.r, obj.albedo.g, obj.albedo.b);
+
+  const material = new Material(
+    new WasmRGB(obj.emission.r, obj.emission.g, obj.emission.b),
+    new WasmRGB(obj.albedo.r, obj.albedo.g, obj.albedo.b),
+    obj.metallic,
+    obj.roughness,
+    obj.transmission,
+    obj.ior,
+  );
 
   const shape = obj.shape;
   switch (shape) {
     case "plane":
       const normal = new WasmVec3(obj.normal.x, obj.normal.y, obj.normal.z);
-      return Entity.new_plane(
-        position,
-        normal,
-        emission,
-        albedo,
-        obj.metallic,
-        obj.roughness,
-        obj.transmission,
-        obj.ior,
-      );
+      return Entity.new_plane(position, material, normal);
     case "sphere":
-      return Entity.new_sphere(
-        position,
-        emission,
-        albedo,
-        obj.metallic,
-        obj.roughness,
-        obj.transmission,
-        obj.ior,
-        obj.radius,
-      );
+      return Entity.new_sphere(position, material, obj.radius);
     default:
       return exhaustiveMatchGuard(`unknow shapre: ${shape}`);
   }
