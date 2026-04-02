@@ -30,24 +30,24 @@ fn random_in_unit_disc(rng: &mut impl rand::Rng) -> (f32, f32) {
     }
 }
 
-fn avg_samples(samples: &[Vec<Vec3>], count: u32) -> Vec<Vec<Vec3>> {
-    samples
-        .iter()
-        .map(|row| row.iter().map(|v| *v / count).collect())
-        .collect()
-}
-
-fn samples_to_pixel_map(samples: &[Vec<Vec3>]) -> Vec<u8> {
-    let mut pixels = Vec::with_capacity(samples.len() * samples[0].len() * 4);
-    for row in samples {
-        for sample in row {
-            pixels.push(sample.x as u8);
-            pixels.push(sample.y as u8);
-            pixels.push(sample.z as u8);
-            pixels.push(255);
+fn avg_samples_into(samples: &[Vec<Vec3>], count: u32, out: &mut [Vec<Vec3>]) {
+    for (row_out, row_in) in out.iter_mut().zip(samples.iter()) {
+        for (v_out, v_in) in row_out.iter_mut().zip(row_in.iter()) {
+            *v_out = *v_in / count;
         }
     }
-    pixels
+}
+
+fn samples_to_pixel_map_into(samples: &[Vec<Vec3>], out: &mut Vec<u8>) {
+    out.clear();
+    for row in samples {
+        for sample in row {
+            out.push(sample.x as u8);
+            out.push(sample.y as u8);
+            out.push(sample.z as u8);
+            out.push(255);
+        }
+    }
 }
 
 pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
@@ -68,6 +68,8 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
 
     let origin = Vec3::zero();
     let mut samples: Vec<Vec<Vec3>> = vec![vec![Vec3::new(0.0, 0.0, 0.0); width as usize]; height as usize];
+    let mut avg_buf: Vec<Vec<Vec3>> = vec![vec![Vec3::new(0.0, 0.0, 0.0); width as usize]; height as usize];
+    let mut pixel_buf: Vec<u8> = Vec::with_capacity((width * height * 4) as usize);
 
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
@@ -116,16 +118,18 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
         }
 
         s += 1;
-        let mut pixels = avg_samples(&samples, s);
+        avg_samples_into(&samples, s, &mut avg_buf);
 
+        let mut pixels = std::mem::take(&mut avg_buf);
         for pp in post_processors.clone() {
             pixels = pp.process(pixels);
         }
 
-        let image_data =
-            ImageData::new_with_u8_clamped_array_and_sh(Clamped(&samples_to_pixel_map(&pixels)), width, height)
-                .unwrap();
+        samples_to_pixel_map_into(&pixels, &mut pixel_buf);
+        let image_data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&pixel_buf), width, height).unwrap();
         local_context.put_image_data(&image_data, 0.0, 0.0).ok();
+
+        avg_buf = pixels;
 
         request_animation_frame(f.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
@@ -137,7 +141,22 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
 mod tests {
     use super::*;
 
-    // --- avg_samples tests ---
+    // --- avg_samples_into tests ---
+
+    fn avg_samples(samples: &[Vec<Vec3>], count: u32) -> Vec<Vec<Vec3>> {
+        let mut out: Vec<Vec<Vec3>> = samples
+            .iter()
+            .map(|row| vec![Vec3::new(0.0, 0.0, 0.0); row.len()])
+            .collect();
+        avg_samples_into(samples, count, &mut out);
+        out
+    }
+
+    fn samples_to_pixel_map(samples: &[Vec<Vec3>]) -> Vec<u8> {
+        let mut out = Vec::new();
+        samples_to_pixel_map_into(samples, &mut out);
+        out
+    }
 
     #[test]
     fn avg_samples_count_1_returns_unchanged() {
