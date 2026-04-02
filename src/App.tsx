@@ -1,30 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import "./App.css";
 import { vec3 } from "./utils/math";
 import { rgb } from "./utils/colour";
-import type { WorkerInMessage, SceneObject, WorkerSettings } from "./render.types";
+import type { WorkerInMessage, SceneObject } from "./render.types";
+import { type Settings, DEFAULT_SETTINGS, settingsReducer } from "./settingsReducer";
 
-interface Settings extends WorkerSettings {
-  gamma: number;
-}
-
-const FOCAL_LENGTH = 1000;
-const FOCAL_DISTANCE = FOCAL_LENGTH / 4;
-const APERTURE = FOCAL_DISTANCE / 200;
-
-const SETTINGS: Settings = {
-  width: 640,
-  height: 480,
-  focalLength: FOCAL_LENGTH,
-  focalDistance: FOCAL_DISTANCE,
-  aperture: APERTURE,
-  samples: 500,
-  bounces: 50,
-  fov: 80,
-  gamma: 2.2,
-};
-
-const MAIN_Z: number = SETTINGS.focalDistance;
+const MAIN_Z: number = DEFAULT_SETTINGS.focalDistance;
 const MAIN_SIZE: number = 25;
 
 const SCENE_DATA: SceneObject[] = [
@@ -96,16 +77,16 @@ for (let i = 0; i < 25; i++) {
   });
 }
 
-function startRender(canvas: OffscreenCanvas): Worker {
+function startRender(canvas: OffscreenCanvas, settings: Settings): Worker {
   const worker = new Worker(new URL("./renderer.worker.ts", import.meta.url));
   worker.onerror = (e) => console.error("worker error:", e);
 
   const msg: WorkerInMessage = {
     type: "start",
     canvas: canvas,
-    settings: SETTINGS,
+    settings: settings,
     entities: SCENE_DATA,
-    gamma: SETTINGS.gamma,
+    gamma: settings.gamma,
   };
   worker.postMessage(msg, [canvas]);
 
@@ -113,26 +94,34 @@ function startRender(canvas: OffscreenCanvas): Worker {
 }
 
 function App() {
+  const [settings, updateSettings] = useReducer(settingsReducer, DEFAULT_SETTINGS);
   const workerRef = useRef<Worker | null>(null);
-  const offscreenCanvas = useRef<OffscreenCanvas | null>(null);
+  const settingsRef = useRef(settings);
+  const [renderKey, incrementRenderKey] = useReducer((k: number) => k + 1, 0);
 
-  const canvasRefCallback = (canvas: HTMLCanvasElement | null) => {
-    if (!canvas) return;
+  settingsRef.current = settings;
+
+  useEffect(() => {
     if (workerRef.current) {
       workerRef.current.terminate();
       workerRef.current = null;
+      incrementRenderKey();
     }
+  }, [settings]);
 
-    if (!offscreenCanvas.current) {
-      offscreenCanvas.current = canvas.transferControlToOffscreen();
-    }
+  const canvasRefCallback = useCallback(
+    (canvas: HTMLCanvasElement | null) => {
+      if (!canvas) return;
 
-    workerRef.current = startRender(offscreenCanvas.current);
-  };
+      const offscreenCanvas = canvas.transferControlToOffscreen();
+      workerRef.current = startRender(offscreenCanvas, settingsRef.current);
+    },
+    [renderKey],
+  );
 
   return (
     <div className="App">
-      <canvas ref={canvasRefCallback} width={SETTINGS.width} height={SETTINGS.height} />
+      <canvas key={renderKey} ref={canvasRefCallback} width={settings.width} height={settings.height} />
     </div>
   );
 }
