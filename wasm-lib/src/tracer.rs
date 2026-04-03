@@ -123,3 +123,30 @@ pub fn trace(ray: Ray, entities: &[Entity], steps: u32, rng: &mut impl Rng) -> V
         _ => sky_color(ray),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::material::Material;
+    use crate::rgb::Rgb;
+
+    fn test_material() -> Material {
+        Material::new(Rgb::new(0.0, 0.0, 0.0), Rgb::new(1.0, 1.0, 1.0), 0.0, 0.0, 0.0, 1.5)
+    }
+
+    #[test]
+    fn test_find_intersection() {
+        let sphere1 = Entity::new_sphere(Vec3::new(0.0, 0.0, 10.0), test_material(), 2.0);
+        let sphere2 = Entity::new_sphere(Vec3::new(0.0, 0.0, 5.0), test_material(), 1.0);
+        let entities = vec![sphere1, sphere2];
+
+        let ray = Ray {
+            origin: Vec3::zero(),
+            direction: Vec3::new(0.0, 0.0, 1.0),
+        };
+
+        let intersection = find_intersection(ray, &entities).unwrap();
+        assert_eq!(intersection.dist, 4.0);
+        assert_eq!(intersection.point, Vec3::new(0.0, 0.0, 4.0));
+    }
+}

@@ -82,6 +82,14 @@ impl Entity {
     pub fn material(self) -> Material {
         self.material
     }
+
+    pub fn position(self) -> Vec3 {
+        self.position
+    }
+
+    pub fn shape(self) -> Shape {
+        self.shape
+    }
 }
 
 #[wasm_bindgen]
@@ -103,5 +111,65 @@ impl Entity {
             },
             material,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::rgb::Rgb;
+
+    fn test_material() -> Material {
+        Material::new(Rgb::new(0.0, 0.0, 0.0), Rgb::new(1.0, 1.0, 1.0), 0.0, 0.0, 0.0, 1.5)
+    }
+
+    #[test]
+    fn test_sphere_intersection() {
+        let sphere = Entity::new_sphere(Vec3::new(0.0, 0.0, 10.0), test_material(), 2.0);
+        let ray = Ray {
+            origin: Vec3::zero(),
+            direction: Vec3::new(0.0, 0.0, 1.0),
+        };
+
+        let intersection = sphere.intersection(ray).unwrap();
+        assert_eq!(intersection.dist, 8.0);
+        assert_eq!(intersection.point, Vec3::new(0.0, 0.0, 8.0));
+        assert_eq!(intersection.normal, Vec3::new(0.0, 0.0, -1.0));
+    }
+
+    #[test]
+    fn test_sphere_no_intersection() {
+        let sphere = Entity::new_sphere(Vec3::new(0.0, 10.0, 0.0), test_material(), 2.0);
+        let ray = Ray {
+            origin: Vec3::zero(),
+            direction: Vec3::new(0.0, 0.0, 1.0),
+        };
+
+        assert!(sphere.intersection(ray).is_none());
+    }
+
+    #[test]
+    fn test_plane_intersection() {
+        let plane = Entity::new_plane(Vec3::new(0.0, -2.0, 0.0), test_material(), Vec3::new(0.0, 1.0, 0.0));
+        let ray = Ray {
+            origin: Vec3::zero(),
+            direction: Vec3::new(0.0, -1.0, 0.0),
+        };
+
+        let intersection = plane.intersection(ray).unwrap();
+        assert_eq!(intersection.dist, 2.0);
+        assert_eq!(intersection.point, Vec3::new(0.0, -2.0, 0.0));
+        assert_eq!(intersection.normal, Vec3::new(0.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn test_plane_no_intersection() {
+        let plane = Entity::new_plane(Vec3::new(0.0, -2.0, 0.0), test_material(), Vec3::new(0.0, 1.0, 0.0));
+        let ray = Ray {
+            origin: Vec3::zero(),
+            direction: Vec3::new(1.0, 0.0, 0.0),
+        };
+
+        assert!(plane.intersection(ray).is_none());
     }
 }
