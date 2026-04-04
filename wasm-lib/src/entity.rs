@@ -17,6 +17,21 @@ pub struct Entity {
 }
 
 impl Entity {
+    pub fn bounds(self) -> Result<(Vec3, Vec3), &'static str> {
+        match self.shape {
+            Shape::Sphere { radius } => self.bounds_sphere(radius),
+            Shape::Plane { normal } => self.bounds_plane(normal),
+        }
+    }
+
+    fn bounds_sphere(self, radius: f32) -> Result<(Vec3, Vec3), &'static str> {
+        Ok((self.position - radius, self.position + radius))
+    }
+
+    fn bounds_plane(self, _normal: Vec3) -> Result<(Vec3, Vec3), &'static str> {
+        Err("planes are infinate on two axis")
+    }
+
     pub fn intersection(self, ray: Ray) -> Option<Intersection> {
         match self.shape {
             Shape::Sphere { radius } => self.intersect_sphere(ray, radius),

@@ -1,3 +1,4 @@
+mod aabb;
 mod entity;
 mod intersection;
 mod material;
