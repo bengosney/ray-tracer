@@ -1,6 +1,8 @@
 use crate::entity::Entity;
+use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::iter::FromIterator;
+use std::result;
 
 #[derive(Clone, Copy)]
 pub struct Aabb {
@@ -8,17 +10,29 @@ pub struct Aabb {
     pub max: Vec3,
 }
 
-#[derive(Clone)]
-pub enum Node {
-    Branch {
-        aabb: Aabb,
-        left: Box<Node>,
-        right: Box<Node>,
-    },
-    Leaf {
-        aabb: Aabb,
-        entities: Vec<Entity>,
-    },
+impl Aabb {
+    pub fn intersect(&self, ray: Ray) -> bool {
+        let inv_dir = Vec3::new(1.0, 1.0, 1.0) / ray.direction;
+        let t0 = (self.min - ray.origin) * inv_dir;
+        let t1 = (self.max - ray.origin) * inv_dir;
+
+        let mut t_min = f32::NEG_INFINITY;
+        let mut t_max = f32::INFINITY;
+
+        // X
+        t_min = t_min.max(t0.x.min(t1.x));
+        t_max = t_max.min(t0.x.max(t1.x));
+
+        // Y
+        t_min = t_min.max(t0.y.min(t1.y));
+        t_max = t_max.min(t0.y.max(t1.y));
+
+        // Z
+        t_min = t_min.max(t0.z.min(t1.z));
+        t_max = t_max.min(t0.z.max(t1.z));
+
+        t_min <= t_max && t_max > 0.0
+    }
 }
 
 enum Axis {
@@ -45,11 +59,53 @@ impl From<Aabb> for Axis {
     }
 }
 
-impl Node {
+#[derive(Clone)]
+pub enum Node {
+    Branch {
+        aabb: Aabb,
+        left: Box<Node>,
+        right: Box<Node>,
+    },
+    Leaf {
+        aabb: Aabb,
+        entities: Vec<Entity>,
+    },
+}
+
+pub struct Tree {
+    node: Node,
+}
+
+impl Tree {
     pub fn build(entities: &[Entity]) -> Self {
         let entities: Vec<Entity> = entities.iter().filter(|e| e.bounds().is_ok()).cloned().collect();
+        let node = Node::build_recursive(entities);
+        Self { node }
+    }
 
-        Self::build_recursive(entities)
+    pub fn collect_entities(&self, ray: Ray) -> Vec<Entity> {
+        let mut results: Vec<&Entity> = Vec::new();
+        self.node.collect_entities(ray, &mut results);
+
+        results.into_iter().cloned().collect()
+    }
+}
+
+impl Node {
+    fn collect_entities<'a>(&'a self, ray: Ray, results: &mut Vec<&'a Entity>) {
+        match self {
+            Node::Branch { left, right, aabb } => {
+                if aabb.intersect(ray) {
+                    left.collect_entities(ray, results);
+                    right.collect_entities(ray, results);
+                }
+            }
+            Node::Leaf { entities, aabb } => {
+                if aabb.intersect(ray) {
+                    results.extend(entities.iter());
+                }
+            }
+        }
     }
 
     fn build_recursive(mut entities: Vec<Entity>) -> Self {
@@ -157,5 +213,51 @@ mod tests {
         // Plane returns Err on bounds(), so it should be ignored by calculate_bounds
         assert_eq!(bounds.min, Vec3::new(-1.0, -1.0, -1.0));
         assert_eq!(bounds.max, Vec3::new(1.0, 1.0, 1.0));
+    }
+
+    #[test]
+    fn test_aabb_intersection() {
+        let aabb = Aabb {
+            min: Vec3::new(-1.0, -1.0, -1.0),
+            max: Vec3::new(1.0, 1.0, 1.0),
+        };
+
+        // Ray hitting directly
+        let ray_hit = Ray {
+            origin: Vec3::new(0.0, 0.0, -5.0),
+            direction: Vec3::new(0.0, 0.0, 1.0),
+        };
+        assert!(aabb.intersect(ray_hit));
+
+        // Ray missing
+        let ray_miss = Ray {
+            origin: Vec3::new(0.0, 2.0, -5.0),
+            direction: Vec3::new(0.0, 0.0, 1.0),
+        };
+        assert!(!aabb.intersect(ray_miss));
+
+        // Ray inside
+        let ray_inside = Ray {
+            origin: Vec3::zero(),
+            direction: Vec3::new(0.0, 1.0, 0.0),
+        };
+        assert!(aabb.intersect(ray_inside));
+    }
+
+    #[test]
+    fn test_tree_collect_entities() {
+        let sphere1 = Entity::new_sphere(Vec3::new(0.0, 0.0, 5.0), test_material(), 1.0);
+        let sphere2 = Entity::new_sphere(Vec3::new(10.0, 10.0, 10.0), test_material(), 1.0);
+        let entities = vec![sphere1, sphere2];
+        let tree = Tree::build(&entities);
+
+        let ray = Ray {
+            origin: Vec3::zero(),
+            direction: Vec3::new(0.0, 0.0, 1.0),
+        };
+
+        let collected = tree.collect_entities(ray);
+        assert_eq!(collected.len(), 1);
+        assert_eq!(collected[0].position(), Vec3::new(0.0, 0.0, 5.0));
     }
 }
