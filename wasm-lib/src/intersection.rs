@@ -1,5 +1,6 @@
 use crate::{entity::Entity, vec3::Vec3};
 
+#[derive(Copy, Clone)]
 pub struct Intersection {
     pub dist: f32,
     pub point: Vec3,

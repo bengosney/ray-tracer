@@ -1,3 +1,4 @@
+use js_sys::Date;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -82,6 +83,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
             return;
         }
         log(&format!("Sample {}", s));
+        let start = Date::now();
         let mut rng = SmallRng::from_entropy();
         for i in 0..width as i32 {
             for j in 0..height as i32 {
@@ -132,6 +134,8 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
 
         avg_buf = pixels;
 
+        let end = Date::now();
+        log(&format!("took (bvh) {}", (end - start) / 1000.0));
         request_animation_frame(f.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
 

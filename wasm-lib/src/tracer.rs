@@ -7,18 +7,7 @@ use crate::ray::Ray;
 use crate::vec3::Vec3;
 
 pub fn find_intersection(ray: Ray, bvh_tree: &Tree) -> Option<Intersection> {
-    let entities = bvh_tree.collect_entities(ray);
-    let intersection = entities.iter().fold(Intersection::empty(), |previous, entity| {
-        match entity.intersection(ray) {
-            Some(intersection) => Intersection::closest(intersection, previous),
-            None => previous,
-        }
-    });
-
-    match intersection {
-        Intersection { entity: None, .. } => None,
-        intersection => Some(intersection),
-    }
+    bvh_tree.find_intersection(ray)
 }
 
 fn sky_color(ray: Ray) -> Vec3 {

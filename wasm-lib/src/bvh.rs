@@ -10,8 +10,7 @@ pub struct Aabb {
 }
 
 impl Aabb {
-    pub fn intersect(&self, ray: Ray) -> bool {
-        let inv_dir = Vec3::new(1.0, 1.0, 1.0) / ray.direction;
+    pub fn intersect(&self, ray: Ray, inv_dir: Vec3) -> Option<f32> {
         let t0 = (self.min - ray.origin) * inv_dir;
         let t1 = (self.max - ray.origin) * inv_dir;
 
@@ -30,7 +29,11 @@ impl Aabb {
         t_min = t_min.max(t0.z.min(t1.z));
         t_max = t_max.min(t0.z.max(t1.z));
 
-        t_min <= t_max && t_max > 0.0
+        if t_min <= t_max && t_max > 0.0 {
+            Some(t_min.max(0.0))
+        } else {
+            None
+        }
     }
 }
 
@@ -42,9 +45,10 @@ enum Axis {
 
 impl From<Vec3> for Axis {
     fn from(v: Vec3) -> Self {
-        if v.x > v.y && v.x > v.z {
+        let v_abs = Vec3::new(v.x.abs(), v.y.abs(), v.z.abs());
+        if v_abs.x > v_abs.y && v_abs.x > v_abs.z {
             Axis::X
-        } else if v.y > v.z {
+        } else if v_abs.y > v_abs.z {
             Axis::Y
         } else {
             Axis::Z
@@ -54,7 +58,7 @@ impl From<Vec3> for Axis {
 
 impl From<Aabb> for Axis {
     fn from(aabb: Aabb) -> Self {
-        Axis::from(aabb.min - aabb.max)
+        Axis::from(aabb.max - aabb.min)
     }
 }
 
@@ -69,6 +73,15 @@ pub enum Node {
         aabb: Aabb,
         entities: Vec<Entity>,
     },
+}
+
+impl Node {
+    pub fn aabb(&self) -> Aabb {
+        match self {
+            Node::Branch { aabb, .. } => *aabb,
+            Node::Leaf { aabb, .. } => *aabb,
+        }
+    }
 }
 
 pub struct Tree {
@@ -90,62 +103,152 @@ impl Tree {
         }
     }
 
-    pub fn collect_entities(&self, ray: Ray) -> Vec<&Entity> {
-        let mut results = self.unbound.iter().collect::<Vec<_>>();
-        self.node.collect_entities(ray, &mut results);
-        results
+    pub fn find_intersection(&self, ray: Ray) -> Option<crate::intersection::Intersection> {
+        let mut closest = crate::intersection::Intersection::empty();
+
+        for entity in &self.unbound {
+            if let Some(hit) = entity.intersection(ray) {
+                closest = crate::intersection::Intersection::closest(hit, closest);
+            }
+        }
+
+        let inv_dir = Vec3::new(1.0, 1.0, 1.0) / ray.direction;
+        if self.node.aabb().intersect(ray, inv_dir).is_some() {
+            self.node.find_intersection(ray, inv_dir, &mut closest);
+        }
+
+        if closest.entity.is_some() {
+            Some(closest)
+        } else {
+            None
+        }
     }
 }
 
 impl Node {
-    fn collect_entities<'a>(&'a self, ray: Ray, results: &mut Vec<&'a Entity>) {
+    fn find_intersection(&self, ray: Ray, inv_dir: Vec3, closest: &mut crate::intersection::Intersection) {
         match self {
-            Node::Branch { left, right, aabb } => {
-                if aabb.intersect(ray) {
-                    left.collect_entities(ray, results);
-                    right.collect_entities(ray, results);
+            Node::Branch { left, right, .. } => {
+                let t_left = left.aabb().intersect(ray, inv_dir);
+                let t_right = right.aabb().intersect(ray, inv_dir);
+
+                match (t_left, t_right) {
+                    (Some(tl), Some(tr)) => {
+                        if tl < tr {
+                            if tl < closest.dist {
+                                left.find_intersection(ray, inv_dir, closest);
+                            }
+                            if tr < closest.dist {
+                                right.find_intersection(ray, inv_dir, closest);
+                            }
+                        } else {
+                            if tr < closest.dist {
+                                right.find_intersection(ray, inv_dir, closest);
+                            }
+                            if tl < closest.dist {
+                                left.find_intersection(ray, inv_dir, closest);
+                            }
+                        }
+                    }
+                    (Some(tl), None) => {
+                        if tl < closest.dist {
+                            left.find_intersection(ray, inv_dir, closest);
+                        }
+                    }
+                    (None, Some(tr)) => {
+                        if tr < closest.dist {
+                            right.find_intersection(ray, inv_dir, closest);
+                        }
+                    }
+                    (None, None) => {}
                 }
             }
-            Node::Leaf { entities, aabb } => {
-                if aabb.intersect(ray) {
-                    results.extend(entities.iter());
+            Node::Leaf { entities, .. } => {
+                for entity in entities {
+                    if let Some(hit) = entity.intersection(ray) {
+                        *closest = crate::intersection::Intersection::closest(hit, *closest);
+                    }
                 }
             }
         }
     }
 
-    fn build_recursive(mut entities: Vec<Entity>) -> Self {
+    fn build_recursive(entities: Vec<Entity>) -> Self {
         let aabb = Self::calculate_bounds(&entities);
 
-        if entities.len() <= 4 {
+        if entities.len() <= 1 {
             return Node::Leaf { aabb, entities };
         }
 
         let axis = Axis::from(aabb);
+        let midpoint = (aabb.min + aabb.max) * 0.5;
+        let mid_val = match axis {
+            Axis::X => midpoint.x,
+            Axis::Y => midpoint.y,
+            Axis::Z => midpoint.z,
+        };
 
-        entities.sort_by(|a, b| {
-            let a_pos = a.position();
-            let b_pos = b.position();
-            let (a_val, b_val) = match axis {
-                Axis::X => (a_pos.x, b_pos.x),
-                Axis::Y => (a_pos.y, b_pos.y),
-                Axis::Z => (a_pos.z, b_pos.z),
+        let mut left_entities = Vec::new();
+        let mut right_entities = Vec::new();
+
+        for entity in entities {
+            let pos = entity.position();
+            let val = match axis {
+                Axis::X => pos.x,
+                Axis::Y => pos.y,
+                Axis::Z => pos.z,
             };
-            a_val.partial_cmp(&b_val).unwrap_or(std::cmp::Ordering::Equal)
-        });
 
-        let mid = entities.len() / 2;
-        let right_entities = entities.split_off(mid);
+            if val < mid_val {
+                left_entities.push(entity);
+            } else {
+                right_entities.push(entity);
+            }
+        }
+
+        // If split failed (e.g. all entities on one side), fallback to simple median split
+        if left_entities.is_empty() || right_entities.is_empty() {
+            let mut all = if left_entities.is_empty() {
+                right_entities
+            } else {
+                left_entities
+            };
+
+            all.sort_by(|a, b| {
+                let a_pos = a.position();
+                let b_pos = b.position();
+                let (a_val, b_val) = match axis {
+                    Axis::X => (a_pos.x, b_pos.x),
+                    Axis::Y => (a_pos.y, b_pos.y),
+                    Axis::Z => (a_pos.z, b_pos.z),
+                };
+                a_val.partial_cmp(&b_val).unwrap_or(std::cmp::Ordering::Equal)
+            });
+
+            let mid = all.len() / 2;
+            right_entities = all.split_off(mid);
+            left_entities = all;
+        }
 
         Node::Branch {
             aabb,
-            left: Box::new(Self::build_recursive(entities)),
+            left: Box::new(Self::build_recursive(left_entities)),
             right: Box::new(Self::build_recursive(right_entities)),
         }
     }
 
     fn calculate_bounds(entities: &[Entity]) -> Aabb {
-        entities.iter().filter_map(|e| e.bounds().ok()).collect()
+        entities.iter().filter_map(|e| e.bounds().ok()).fold(
+            Aabb {
+                min: Vec3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY),
+                max: Vec3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY),
+            },
+            |mut acc, (e_min, e_max)| {
+                acc.min = acc.min.min(e_min);
+                acc.max = acc.max.max(e_max);
+                acc
+            },
+        )
     }
 }
 
@@ -233,37 +336,23 @@ mod tests {
             origin: Vec3::new(0.0, 0.0, -5.0),
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
-        assert!(aabb.intersect(ray_hit));
+        let inv_dir_hit = Vec3::new(1.0, 1.0, 1.0) / ray_hit.direction;
+        assert!(aabb.intersect(ray_hit, inv_dir_hit).is_some());
 
         // Ray missing
         let ray_miss = Ray {
             origin: Vec3::new(0.0, 2.0, -5.0),
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
-        assert!(!aabb.intersect(ray_miss));
+        let inv_dir_miss = Vec3::new(1.0, 1.0, 1.0) / ray_miss.direction;
+        assert!(aabb.intersect(ray_miss, inv_dir_miss).is_none());
 
         // Ray inside
         let ray_inside = Ray {
             origin: Vec3::zero(),
             direction: Vec3::new(0.0, 1.0, 0.0),
         };
-        assert!(aabb.intersect(ray_inside));
-    }
-
-    #[test]
-    fn test_tree_collect_entities() {
-        let sphere1 = Entity::new_sphere(Vec3::new(0.0, 0.0, 5.0), test_material(), 1.0);
-        let sphere2 = Entity::new_sphere(Vec3::new(10.0, 10.0, 10.0), test_material(), 1.0);
-        let entities = vec![sphere1, sphere2];
-        let tree = Tree::build(&entities);
-
-        let ray = Ray {
-            origin: Vec3::zero(),
-            direction: Vec3::new(0.0, 0.0, 1.0),
-        };
-
-        let collected = tree.collect_entities(ray);
-        assert_eq!(collected.len(), 1);
-        assert_eq!(collected[0].position(), Vec3::new(0.0, 0.0, 5.0));
+        let inv_dir_inside = Vec3::new(1.0, 1.0, 1.0) / ray_inside.direction;
+        assert!(aabb.intersect(ray_inside, inv_dir_inside).is_some());
     }
 }
