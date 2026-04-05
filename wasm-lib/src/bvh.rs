@@ -73,20 +73,27 @@ pub enum Node {
 
 pub struct Tree {
     node: Node,
+    unbound: Vec<Entity>,
 }
 
 impl Tree {
     pub fn build(entities: &[Entity]) -> Self {
-        let entities: Vec<Entity> = entities.iter().filter(|e| e.bounds().is_ok()).cloned().collect();
-        let node = Node::build_recursive(entities);
-        Self { node }
+        let (with_bounds, without_bounds): (Vec<&Entity>, Vec<&Entity>) =
+            entities.iter().partition(|e| e.bounds().is_ok());
+
+        let entities_with_bounds: Vec<Entity> = with_bounds.into_iter().cloned().collect();
+        let node = Node::build_recursive(entities_with_bounds);
+
+        Self {
+            node,
+            unbound: without_bounds.into_iter().cloned().collect(),
+        }
     }
 
-    pub fn collect_entities(&self, ray: Ray) -> Vec<Entity> {
-        let mut results: Vec<&Entity> = Vec::new();
+    pub fn collect_entities(&self, ray: Ray) -> Vec<&Entity> {
+        let mut results = self.unbound.iter().collect::<Vec<_>>();
         self.node.collect_entities(ray, &mut results);
-
-        results.into_iter().cloned().collect()
+        results
     }
 }
 
@@ -110,7 +117,7 @@ impl Node {
     fn build_recursive(mut entities: Vec<Entity>) -> Self {
         let aabb = Self::calculate_bounds(&entities);
 
-        if entities.len() <= 1 {
+        if entities.len() <= 4 {
             return Node::Leaf { aabb, entities };
         }
 

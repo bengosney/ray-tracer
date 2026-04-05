@@ -55,7 +55,6 @@ impl Entity {
 
 #[wasm_bindgen]
 impl Entity {
-    //#[wasm_bindgen(constructor)]
     pub fn new_sphere(position: Vec3, material: Material, radius: f32) -> Self {
         Self {
             position,

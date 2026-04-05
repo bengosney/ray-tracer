@@ -7,6 +7,7 @@ use web_sys::{ImageData, OffscreenCanvasRenderingContext2d};
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 
+use crate::bvh::Tree;
 use crate::log;
 use crate::post_processing::PostProcess;
 use crate::ray::Ray;
@@ -60,7 +61,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
     let focal_distance = scene.focal_distance as f32;
     let aperture = scene.appature;
     let bounces = scene.bounces;
-    let entities = scene.entities().to_vec();
+    let bvh = Tree::build(scene.entities());
     let sample_count = scene.samples;
     let post_processors: Vec<Rc<dyn PostProcess>> = scene.post_processors().iter().map(Rc::clone).collect();
 
@@ -109,7 +110,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
                         origin: jittered_origin,
                         direction: jittered_direction,
                     },
-                    &entities,
+                    &bvh,
                     bounces,
                     &mut rng,
                 );
