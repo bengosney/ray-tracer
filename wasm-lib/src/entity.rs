@@ -1,11 +1,13 @@
 use wasm_bindgen::prelude::*;
 
+use crate::plane::Plane;
+use crate::sphere::Sphere;
 use crate::{intersection::Intersection, material::Material, ray::Ray, vec3::Vec3};
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum Shape {
-    Sphere { radius: f32 },
-    Plane { normal: Vec3 },
+    Sphere(Sphere),
+    Plane(Plane),
 }
 
 #[wasm_bindgen()]
@@ -19,77 +21,21 @@ pub struct Entity {
 impl Entity {
     pub fn bounds(self) -> Result<(Vec3, Vec3), &'static str> {
         match self.shape {
-            Shape::Sphere { radius } => self.bounds_sphere(radius),
-            Shape::Plane { normal } => self.bounds_plane(normal),
+            Shape::Sphere(s) => s.bounds(self.position),
+            Shape::Plane(p) => p.bounds(self.position),
         }
-    }
-
-    fn bounds_sphere(self, radius: f32) -> Result<(Vec3, Vec3), &'static str> {
-        Ok((self.position - radius, self.position + radius))
-    }
-
-    fn bounds_plane(self, _normal: Vec3) -> Result<(Vec3, Vec3), &'static str> {
-        Err("planes are infinate on two axis")
     }
 
     pub fn intersection(self, ray: Ray) -> Option<Intersection> {
-        match self.shape {
-            Shape::Sphere { radius } => self.intersect_sphere(ray, radius),
-            Shape::Plane { normal } => self.intersect_plane(ray, normal),
-        }
-    }
-
-    fn intersect_sphere(self, ray: Ray, radius: f32) -> Option<Intersection> {
-        let origin_to_center = ray.origin - self.position;
-        let a = ray.direction.mag_squared();
-        let half_b = origin_to_center.dot(ray.direction);
-        let c = origin_to_center.mag_squared() - radius * radius;
-
-        let discriminant = half_b * half_b - a * c;
-
-        if discriminant < 0.0 {
-            return None;
-        }
-
-        let sqrt_d = discriminant.sqrt();
-        let mut t = (-half_b - sqrt_d) / a;
-
-        if t < 0.001 {
-            t = (-half_b + sqrt_d) / a;
-        }
-
-        if t < 0.001 {
-            return None;
-        }
-
-        let point = ray.origin + (ray.direction * t);
-        let normal = (point - self.position).normalize();
+        let (t, normal) = match self.shape {
+            Shape::Sphere(s) => s.intersect(self.position, ray)?,
+            Shape::Plane(p) => p.intersect(self.position, ray)?,
+        };
 
         Some(Intersection {
             dist: t,
-            point,
+            point: ray.origin + (ray.direction * t),
             normal,
-            entity: Some(self),
-        })
-    }
-
-    fn intersect_plane(self, ray: Ray, normal: Vec3) -> Option<Intersection> {
-        let denom = ray.direction.dot(normal);
-        if denom.abs() < 0.0001 {
-            return None;
-        }
-
-        let t = (self.position - ray.origin).dot(normal) / denom;
-        if t < 0.001 {
-            return None;
-        }
-
-        let point = ray.origin + ray.direction * t;
-
-        Some(Intersection {
-            dist: t,
-            point,
-            normal: if denom > 0.0 { normal * -1.0 } else { normal },
             entity: Some(self),
         })
     }
@@ -113,7 +59,7 @@ impl Entity {
     pub fn new_sphere(position: Vec3, material: Material, radius: f32) -> Self {
         Self {
             position,
-            shape: Shape::Sphere { radius },
+            shape: Shape::Sphere(Sphere::new(radius)),
             material,
         }
     }
@@ -121,9 +67,7 @@ impl Entity {
     pub fn new_plane(position: Vec3, material: Material, normal: Vec3) -> Self {
         Self {
             position,
-            shape: Shape::Plane {
-                normal: normal.normalize(),
-            },
+            shape: Shape::Plane(Plane::new(normal)),
             material,
         }
     }
@@ -139,52 +83,57 @@ mod tests {
     }
 
     #[test]
-    fn test_sphere_intersection() {
-        let sphere = Entity::new_sphere(Vec3::new(0.0, 0.0, 10.0), test_material(), 2.0);
+    fn test_entity_sphere_intersection() {
+        let position = Vec3::new(0.0, 0.0, 10.0);
+        let entity = Entity::new_sphere(position, test_material(), 2.0);
         let ray = Ray {
             origin: Vec3::zero(),
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
 
-        let intersection = sphere.intersection(ray).unwrap();
+        let intersection = entity.intersection(ray).unwrap();
         assert_eq!(intersection.dist, 8.0);
-        assert_eq!(intersection.point, Vec3::new(0.0, 0.0, 8.0));
-        assert_eq!(intersection.normal, Vec3::new(0.0, 0.0, -1.0));
+        assert!(intersection.entity.is_some());
+        assert_eq!(intersection.entity.unwrap().position(), entity.position());
     }
 
     #[test]
-    fn test_sphere_no_intersection() {
-        let sphere = Entity::new_sphere(Vec3::new(0.0, 10.0, 0.0), test_material(), 2.0);
-        let ray = Ray {
-            origin: Vec3::zero(),
-            direction: Vec3::new(0.0, 0.0, 1.0),
-        };
-
-        assert!(sphere.intersection(ray).is_none());
-    }
-
-    #[test]
-    fn test_plane_intersection() {
-        let plane = Entity::new_plane(Vec3::new(0.0, -2.0, 0.0), test_material(), Vec3::new(0.0, 1.0, 0.0));
+    fn test_entity_plane_intersection() {
+        let position = Vec3::new(0.0, -2.0, 0.0);
+        let entity = Entity::new_plane(position, test_material(), Vec3::new(0.0, 1.0, 0.0));
         let ray = Ray {
             origin: Vec3::zero(),
             direction: Vec3::new(0.0, -1.0, 0.0),
         };
 
-        let intersection = plane.intersection(ray).unwrap();
+        let intersection = entity.intersection(ray).unwrap();
         assert_eq!(intersection.dist, 2.0);
-        assert_eq!(intersection.point, Vec3::new(0.0, -2.0, 0.0));
-        assert_eq!(intersection.normal, Vec3::new(0.0, 1.0, 0.0));
+        assert!(intersection.entity.is_some());
+        assert_eq!(intersection.entity.unwrap().position(), entity.position());
     }
 
     #[test]
-    fn test_plane_no_intersection() {
-        let plane = Entity::new_plane(Vec3::new(0.0, -2.0, 0.0), test_material(), Vec3::new(0.0, 1.0, 0.0));
-        let ray = Ray {
-            origin: Vec3::zero(),
-            direction: Vec3::new(1.0, 0.0, 0.0),
-        };
+    fn test_entity_accessors() {
+        let position = Vec3::new(1.0, 2.0, 3.0);
+        let material = test_material();
+        let entity = Entity::new_sphere(position, material, 1.0);
 
-        assert!(plane.intersection(ray).is_none());
+        assert_eq!(entity.position(), position);
+        let m = entity.material();
+        assert_eq!(m.ior, material.ior);
+        assert_eq!(m.metallic, material.metallic);
+
+        match entity.shape() {
+            Shape::Sphere(s) => assert_eq!(s.radius, 1.0),
+            _ => panic!("Expected sphere"),
+        }
+    }
+
+    #[test]
+    fn test_entity_bounds() {
+        let entity = Entity::new_sphere(Vec3::zero(), test_material(), 1.0);
+        let (min, max) = entity.bounds().unwrap();
+        assert_eq!(min, Vec3::new(-1.0, -1.0, -1.0));
+        assert_eq!(max, Vec3::new(1.0, 1.0, 1.0));
     }
 }
