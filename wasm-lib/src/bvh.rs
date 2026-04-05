@@ -2,7 +2,6 @@ use crate::entity::Entity;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::iter::FromIterator;
-use std::result;
 
 #[derive(Clone, Copy)]
 pub struct Aabb {
