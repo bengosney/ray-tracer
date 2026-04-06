@@ -10,7 +10,7 @@ interface Settings extends WorkerSettings {
 
 const FOCAL_LENGTH = 1000;
 const FOCAL_DISTANCE = FOCAL_LENGTH / 4;
-const APERTURE = FOCAL_DISTANCE / 200;
+const APERTURE = FOCAL_DISTANCE / 500;
 
 const SETTINGS: Settings = {
   width: 640,
