@@ -11,10 +11,18 @@ pub enum Shape {
     Plane(Plane),
 }
 
+impl Shape {
+    pub fn position(&self) -> Vec3 {
+        match self {
+            Shape::Sphere(s) => s.position(),
+            Shape::Plane(p) => p.position(),
+        }
+    }
+}
+
 #[wasm_bindgen()]
 #[derive(Copy, Clone, PartialEq)]
 pub struct Entity {
-    position: Vec3,
     shape: Shape,
     material: Material,
 }
@@ -22,15 +30,15 @@ pub struct Entity {
 impl Entity {
     pub fn bounds(self) -> Result<(Vec3, Vec3), &'static str> {
         match self.shape {
-            Shape::Sphere(s) => s.bounds(self.position),
-            Shape::Plane(p) => p.bounds(self.position),
+            Shape::Sphere(s) => s.bounds(),
+            Shape::Plane(p) => p.bounds(),
         }
     }
 
     pub fn intersection(self, ray: Ray) -> Option<Intersection> {
         let (t, normal) = match self.shape {
-            Shape::Sphere(s) => s.intersect(self.position, ray)?,
-            Shape::Plane(p) => p.intersect(self.position, ray)?,
+            Shape::Sphere(s) => s.intersect(ray)?,
+            Shape::Plane(p) => p.intersect(ray)?,
         };
 
         Some(Intersection {
@@ -46,7 +54,7 @@ impl Entity {
     }
 
     pub fn position(self) -> Vec3 {
-        self.position
+        self.shape.position()
     }
 
     pub fn shape(self) -> Shape {
@@ -58,16 +66,14 @@ impl Entity {
 impl Entity {
     pub fn new_sphere(position: Vec3, material: Material, radius: f32) -> Self {
         Self {
-            position,
-            shape: Shape::Sphere(Sphere::new(radius)),
+            shape: Shape::Sphere(Sphere::new(radius, position)),
             material,
         }
     }
 
     pub fn new_plane(position: Vec3, material: Material, normal: Vec3) -> Self {
         Self {
-            position,
-            shape: Shape::Plane(Plane::new(normal)),
+            shape: Shape::Plane(Plane::new(normal, position)),
             material,
         }
     }
