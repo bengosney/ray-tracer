@@ -10,7 +10,7 @@ interface Settings extends WorkerSettings {
 
 const FOCAL_LENGTH = 1000;
 const FOCAL_DISTANCE = FOCAL_LENGTH / 4;
-const APERTURE = FOCAL_DISTANCE / 200;
+const APERTURE = FOCAL_DISTANCE / 500;
 
 const SETTINGS: Settings = {
   width: 640,
@@ -90,11 +90,11 @@ const SCENE_DATA: SceneObject[] = [
   },
 ];
 
-for (let i = 0; i < 25; i++) {
+for (let i = 0; i < 250; i++) {
   for (let attempts = 0; attempts < 100; attempts++) {
     const radius = 2 + Math.random() * 5;
     const x = (Math.random() - 0.5) * 150;
-    const z = MAIN_Z + (Math.random() - 0.5) * 150;
+    const z = MAIN_Z + (Math.random() - 0.5) * 250;
     const position = vec3(x, MAIN_SIZE - radius, z);
 
     let isIntersecting = false;

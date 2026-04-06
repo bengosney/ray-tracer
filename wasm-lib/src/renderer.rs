@@ -1,3 +1,4 @@
+use js_sys::Date;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -7,6 +8,7 @@ use web_sys::{ImageData, OffscreenCanvasRenderingContext2d};
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 
+use crate::bvh::Tree;
 use crate::log;
 use crate::post_processing::PostProcess;
 use crate::ray::Ray;
@@ -60,7 +62,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
     let focal_distance = scene.focal_distance as f32;
     let aperture = scene.appature;
     let bounces = scene.bounces;
-    let entities = scene.entities().to_vec();
+    let bvh = Tree::build(scene.entities());
     let sample_count = scene.samples;
     let post_processors: Vec<Rc<dyn PostProcess>> = scene.post_processors().iter().map(Rc::clone).collect();
 
@@ -74,6 +76,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
     let mut s = 0;
+    let mut rng = SmallRng::from_entropy();
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         if s > sample_count {
             log("done.");
@@ -81,9 +84,9 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
             return;
         }
         log(&format!("Sample {}", s));
-        let mut rng = SmallRng::from_entropy();
-        for i in 0..width as i32 {
-            for j in 0..height as i32 {
+        let start = Date::now();
+        for j in 0..height as i32 {
+            for i in 0..width as i32 {
                 use rand::Rng;
                 let x = (i - half_width) as f32 + rng.gen_range(-0.5..0.5);
                 let y = (j - half_height) as f32 + rng.gen_range(-0.5..0.5);
@@ -109,7 +112,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
                         origin: jittered_origin,
                         direction: jittered_direction,
                     },
-                    &entities,
+                    &bvh,
                     bounces,
                     &mut rng,
                 );
@@ -131,6 +134,8 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
 
         avg_buf = pixels;
 
+        let end = Date::now();
+        log(&format!("took (bvh) {}", (end - start) / 1000.0));
         request_animation_frame(f.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
 

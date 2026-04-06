@@ -1,36 +1,26 @@
 use rand::Rng;
 
+use crate::bvh::Tree;
 use crate::entity::Entity;
 use crate::intersection::Intersection;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-pub fn find_intersection(ray: Ray, entities: &[Entity]) -> Option<Intersection> {
-    let intersection = entities.iter().fold(Intersection::empty(), |previous, entity| {
-        match entity.intersection(ray) {
-            Some(intersection) => Intersection::closest(intersection, previous),
-            None => previous,
-        }
-    });
-
-    match intersection {
-        Intersection { entity: None, .. } => None,
-        intersection => Some(intersection),
-    }
+pub fn find_intersection(ray: Ray, bvh_tree: &Tree) -> Option<Intersection> {
+    bvh_tree.find_intersection(ray)
 }
 
 fn sky_color(ray: Ray) -> Vec3 {
-    let unit_direction = ray.direction.normalize();
-    let t = 0.5 * (unit_direction.y + 1.0);
+    let t = 0.5 * (ray.direction.y + 1.0);
     (Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t) * 175.0
 }
 
-pub fn trace(ray: Ray, entities: &[Entity], steps: u32, rng: &mut impl Rng) -> Vec3 {
+pub fn trace(ray: Ray, bvh_tree: &Tree, steps: u32, rng: &mut impl Rng) -> Vec3 {
     if steps == 0 {
         return Vec3::new(0.0, 0.0, 0.0);
     }
 
-    match find_intersection(ray, entities) {
+    match find_intersection(ray, bvh_tree) {
         Some(intersection) => {
             let entity: Entity = intersection.entity.unwrap();
             let material = entity.material();
@@ -117,9 +107,37 @@ pub fn trace(ray: Ray, entities: &[Entity], steps: u32, rng: &mut impl Rng) -> V
                 }
             };
 
-            let incoming = trace(bounce_ray, entities, steps - 1, rng);
+            let incoming = trace(bounce_ray, bvh_tree, steps - 1, rng);
             emitted + (incoming * brdf_weight)
         }
         _ => sky_color(ray),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::material::Material;
+    use crate::rgb::Rgb;
+
+    fn test_material() -> Material {
+        Material::new(Rgb::new(0.0, 0.0, 0.0), Rgb::new(1.0, 1.0, 1.0), 0.0, 0.0, 0.0, 1.5)
+    }
+
+    #[test]
+    fn test_find_intersection() {
+        let sphere1 = Entity::new_sphere(Vec3::new(0.0, 0.0, 10.0), test_material(), 2.0);
+        let sphere2 = Entity::new_sphere(Vec3::new(0.0, 0.0, 5.0), test_material(), 1.0);
+        let entities = vec![sphere1, sphere2];
+        let tree = Tree::build(&entities);
+
+        let ray = Ray {
+            origin: Vec3::zero(),
+            direction: Vec3::new(0.0, 0.0, 1.0),
+        };
+
+        let intersection = find_intersection(ray, &tree).unwrap();
+        assert_eq!(intersection.dist, 4.0);
+        assert_eq!(intersection.point, Vec3::new(0.0, 0.0, 4.0));
     }
 }
