@@ -95,12 +95,13 @@ impl Tree {
             entities.iter().partition(|e| e.bounds().is_ok());
 
         let entities_with_bounds: Vec<Entity> = with_bounds.into_iter().cloned().collect();
+        let bounded_count = entities_with_bounds.len();
         let node = Node::build_recursive(entities_with_bounds, 0);
 
-        Self {
-            node,
-            unbound: without_bounds.into_iter().cloned().collect(),
-        }
+        let unbound: Vec<Entity> = without_bounds.into_iter().cloned().collect();
+        crate::log(&format!("BVH: {} bounded, {} unbound", bounded_count, unbound.len()));
+
+        Self { node, unbound }
     }
 
     pub fn find_intersection(&self, ray: Ray) -> Option<crate::intersection::Intersection> {

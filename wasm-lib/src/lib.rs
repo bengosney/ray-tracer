@@ -2,6 +2,7 @@ mod bvh;
 mod entity;
 mod intersection;
 mod material;
+mod model;
 mod plane;
 mod post_processing;
 mod ray;
