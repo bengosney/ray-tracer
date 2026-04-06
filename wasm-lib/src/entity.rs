@@ -3,12 +3,14 @@ use wasm_bindgen::prelude::*;
 use crate::plane::Plane;
 use crate::sphere::Sphere;
 use crate::traceable::Traceable;
+use crate::triangle::Triangle;
 use crate::{intersection::Intersection, material::Material, ray::Ray, vec3::Vec3};
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum Shape {
     Sphere(Sphere),
     Plane(Plane),
+    Triangle(Triangle),
 }
 
 impl Shape {
@@ -16,6 +18,7 @@ impl Shape {
         match self {
             Shape::Sphere(s) => s.position(),
             Shape::Plane(p) => p.position(),
+            Shape::Triangle(t) => t.position(),
         }
     }
 }
@@ -32,6 +35,7 @@ impl Entity {
         match self.shape {
             Shape::Sphere(s) => s.bounds(),
             Shape::Plane(p) => p.bounds(),
+            Shape::Triangle(t) => t.bounds(),
         }
     }
 
@@ -39,6 +43,7 @@ impl Entity {
         let (t, normal) = match self.shape {
             Shape::Sphere(s) => s.intersect(ray)?,
             Shape::Plane(p) => p.intersect(ray)?,
+            Shape::Triangle(t) => t.intersect(ray)?,
         };
 
         Some(Intersection {
@@ -74,6 +79,13 @@ impl Entity {
     pub fn new_plane(position: Vec3, material: Material, normal: Vec3) -> Self {
         Self {
             shape: Shape::Plane(Plane::new(normal, position)),
+            material,
+        }
+    }
+
+    pub fn new_triangle(a: Vec3, b: Vec3, c: Vec3, material: Material) -> Self {
+        Self {
+            shape: Shape::Triangle(Triangle::new(a, b, c)),
             material,
         }
     }

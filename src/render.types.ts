@@ -2,7 +2,6 @@ import type { Vec3 } from "./utils/math";
 import type { RGB } from "./utils/colour";
 
 interface BaseObject {
-  position: Vec3;
   emission: RGB;
   albedo: RGB;
   metallic: number;
@@ -14,14 +13,23 @@ interface BaseObject {
 export interface Sphere extends BaseObject {
   shape: "sphere";
   radius: number;
+  position: Vec3;
 }
 
 export interface Plane extends BaseObject {
   shape: "plane";
   normal: Vec3;
+  position: Vec3;
 }
 
-export type SceneObject = Sphere | Plane;
+export interface Triangle extends BaseObject {
+  shape: "triangle";
+  a: Vec3;
+  b: Vec3;
+  c: Vec3;
+}
+
+export type SceneObject = Sphere | Plane | Triangle;
 
 export interface WorkerSettings {
   width: number;

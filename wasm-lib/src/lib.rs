@@ -11,6 +11,7 @@ mod scene;
 mod sphere;
 mod traceable;
 mod tracer;
+mod triangle;
 mod vec2;
 mod vec3;
 
