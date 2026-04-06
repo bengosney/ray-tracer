@@ -76,6 +76,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
     let mut s = 0;
+    let mut rng = SmallRng::from_entropy();
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         if s > sample_count {
             log("done.");
@@ -84,9 +85,8 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
         }
         log(&format!("Sample {}", s));
         let start = Date::now();
-        let mut rng = SmallRng::from_entropy();
-        for i in 0..width as i32 {
-            for j in 0..height as i32 {
+        for j in 0..height as i32 {
+            for i in 0..width as i32 {
                 use rand::Rng;
                 let x = (i - half_width) as f32 + rng.gen_range(-0.5..0.5);
                 let y = (j - half_height) as f32 + rng.gen_range(-0.5..0.5);
