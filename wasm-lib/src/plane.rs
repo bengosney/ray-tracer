@@ -1,4 +1,5 @@
 use crate::ray::Ray;
+use crate::traceable::Traceable;
 use crate::vec3::Vec3;
 
 #[derive(Copy, Clone, PartialEq)]
@@ -12,12 +13,14 @@ impl Plane {
             normal: normal.normalize(),
         }
     }
+}
 
-    pub fn bounds(&self, _position: Vec3) -> Result<(Vec3, Vec3), &'static str> {
+impl Traceable for Plane {
+    fn bounds(&self, _position: Vec3) -> Result<(Vec3, Vec3), &'static str> {
         Err("planes are infinate on two axis")
     }
 
-    pub fn intersect(&self, position: Vec3, ray: Ray) -> Option<(f32, Vec3)> {
+    fn intersect(&self, position: Vec3, ray: Ray) -> Option<(f32, Vec3)> {
         let denom = ray.direction.dot(self.normal);
         if denom.abs() < 0.0001 {
             return None;

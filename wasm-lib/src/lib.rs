@@ -9,6 +9,7 @@ mod renderer;
 mod rgb;
 mod scene;
 mod sphere;
+mod traceable;
 mod tracer;
 mod vec2;
 mod vec3;

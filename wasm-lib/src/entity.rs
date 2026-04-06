@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::plane::Plane;
 use crate::sphere::Sphere;
+use crate::traceable::Traceable;
 use crate::{intersection::Intersection, material::Material, ray::Ray, vec3::Vec3};
 
 #[derive(Copy, Clone, PartialEq)]
