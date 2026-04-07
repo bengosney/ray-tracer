@@ -13,37 +13,28 @@ pub enum Shape {
     Triangle(Triangle),
 }
 
-impl Shape {
-    pub fn position(&self) -> Vec3 {
-        match self {
-            Shape::Sphere(s) => s.position(),
-            Shape::Plane(p) => p.position(),
-            Shape::Triangle(t) => t.position(),
-        }
-    }
-}
-
 #[wasm_bindgen()]
 #[derive(Copy, Clone, PartialEq)]
 pub struct Entity {
     shape: Shape,
     material: Material,
+    position: Vec3,
 }
 
 impl Entity {
     pub fn bounds(self) -> Result<(Vec3, Vec3), &'static str> {
         match self.shape {
-            Shape::Sphere(s) => s.bounds(),
-            Shape::Plane(p) => p.bounds(),
-            Shape::Triangle(t) => t.bounds(),
+            Shape::Sphere(s) => s.bounds(self.position),
+            Shape::Plane(p) => p.bounds(self.position),
+            Shape::Triangle(t) => t.bounds(self.position),
         }
     }
 
     pub fn intersection(self, ray: Ray) -> Option<Intersection> {
         let (t, normal) = match self.shape {
-            Shape::Sphere(s) => s.intersect(ray)?,
-            Shape::Plane(p) => p.intersect(ray)?,
-            Shape::Triangle(t) => t.intersect(ray)?,
+            Shape::Sphere(s) => s.intersect(ray, self.position)?,
+            Shape::Plane(p) => p.intersect(ray, self.position)?,
+            Shape::Triangle(t) => t.intersect(ray, self.position)?,
         };
 
         Some(Intersection {
@@ -59,7 +50,7 @@ impl Entity {
     }
 
     pub fn position(self) -> Vec3 {
-        self.shape.position()
+        self.position
     }
 
     pub fn shape(self) -> Shape {
@@ -71,22 +62,25 @@ impl Entity {
 impl Entity {
     pub fn new_sphere(position: Vec3, material: Material, radius: f32) -> Self {
         Self {
-            shape: Shape::Sphere(Sphere::new(radius, position)),
+            shape: Shape::Sphere(Sphere::new(radius)),
             material,
+            position,
         }
     }
 
     pub fn new_plane(position: Vec3, material: Material, normal: Vec3) -> Self {
         Self {
-            shape: Shape::Plane(Plane::new(normal, position)),
+            shape: Shape::Plane(Plane::new(normal)),
             material,
+            position,
         }
     }
 
-    pub fn new_triangle(a: Vec3, b: Vec3, c: Vec3, material: Material) -> Self {
+    pub fn new_triangle(position: Vec3, a: Vec3, b: Vec3, c: Vec3, material: Material) -> Self {
         Self {
             shape: Shape::Triangle(Triangle::new(a, b, c)),
             material,
+            position,
         }
     }
 }

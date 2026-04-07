@@ -7,21 +7,19 @@ pub struct Triangle {
     pub a: Vec3,
     pub b: Vec3,
     pub c: Vec3,
-    position: Vec3,
 }
 
 impl Triangle {
     pub fn new(a: Vec3, b: Vec3, c: Vec3) -> Self {
-        let position = (a + b + c) / 3.0;
-        Self { a, b, c, position }
+        Self { a, b, c }
     }
 }
 
 impl Traceable for Triangle {
-    fn bounds(&self) -> Result<(Vec3, Vec3), &'static str> {
-        let pa = self.a;
-        let pb = self.b;
-        let pc = self.c;
+    fn bounds(&self, position: Vec3) -> Result<(Vec3, Vec3), &'static str> {
+        let pa = self.a + position;
+        let pb = self.b + position;
+        let pc = self.c + position;
 
         let min = Vec3::new(
             pa.x.min(pb.x).min(pc.x),
@@ -37,10 +35,10 @@ impl Traceable for Triangle {
         Ok((min, max))
     }
 
-    fn intersect(&self, ray: Ray) -> Option<(f32, Vec3)> {
-        let a = self.a;
-        let b = self.b;
-        let c = self.c;
+    fn intersect(&self, ray: Ray, position: Vec3) -> Option<(f32, Vec3)> {
+        let a = self.a + position;
+        let b = self.b + position;
+        let c = self.c + position;
 
         let edge1 = b - a;
         let edge2 = c - a;
@@ -80,10 +78,6 @@ impl Traceable for Triangle {
 
         Some((t, normal))
     }
-
-    fn position(&self) -> Vec3 {
-        self.position
-    }
 }
 
 #[cfg(test)]
@@ -99,20 +93,13 @@ mod tests {
     }
 
     #[test]
-    fn test_position_is_centroid() {
-        let t = flat_triangle();
-        let expected = Vec3::new(0.0, -1.0 / 3.0, 5.0);
-        assert_eq!(t.position(), expected);
-    }
-
-    #[test]
     fn test_intersection() {
         let t = flat_triangle();
         let ray = Ray {
             origin: Vec3::zero(),
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
-        let (dist, normal) = t.intersect(ray).unwrap();
+        let (dist, normal) = t.intersect(ray, Vec3::zero()).unwrap();
         assert_eq!(dist, 5.0);
         assert_eq!(normal, Vec3::new(0.0, 0.0, -1.0));
     }
@@ -124,7 +111,7 @@ mod tests {
             origin: Vec3::zero(),
             direction: Vec3::new(5.0, 0.0, 1.0).normalize(),
         };
-        assert!(t.intersect(ray).is_none());
+        assert!(t.intersect(ray, Vec3::zero()).is_none());
     }
 
     #[test]
@@ -134,7 +121,7 @@ mod tests {
             origin: Vec3::zero(),
             direction: Vec3::new(1.0, 0.0, 0.0),
         };
-        assert!(t.intersect(ray).is_none());
+        assert!(t.intersect(ray, Vec3::zero()).is_none());
     }
 
     #[test]
@@ -144,14 +131,14 @@ mod tests {
             origin: Vec3::new(0.0, 0.0, 10.0),
             direction: Vec3::new(0.0, 0.0, -1.0),
         };
-        let (_, normal) = t.intersect(ray).unwrap();
+        let (_, normal) = t.intersect(ray, Vec3::zero()).unwrap();
         assert_eq!(normal, Vec3::new(0.0, 0.0, 1.0));
     }
 
     #[test]
     fn test_bounds() {
         let t = flat_triangle();
-        let (min, max) = t.bounds().unwrap();
+        let (min, max) = t.bounds(Vec3::zero()).unwrap();
         assert_eq!(min, Vec3::new(-1.0, -1.0, 5.0));
         assert_eq!(max, Vec3::new(1.0, 1.0, 5.0));
     }

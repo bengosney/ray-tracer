@@ -6,6 +6,7 @@ use crate::entity::Entity;
 use crate::material::Material;
 use crate::model::Model;
 use crate::post_processing::{GammaCorrection, ImageFilter, PostProcess};
+use crate::vec3::Vec3;
 use crate::{log, renderer};
 
 #[wasm_bindgen]
@@ -78,11 +79,11 @@ impl Scene {
         renderer::render(self, ctx);
     }
 
-    pub fn load_model(&mut self, text: &str, material: Material) {
+    pub fn load_model(&mut self, text: &str, position: Vec3, material: Material) {
         let model = Model::parse(text);
         let mut tri_count = 0;
         for t in model.triangles() {
-            let entity = Entity::new_triangle(t.0, t.1, t.2, material);
+            let entity = Entity::new_triangle(position, t.0, t.1, t.2, material);
             self.add_entity(entity);
             tri_count += 1;
         }

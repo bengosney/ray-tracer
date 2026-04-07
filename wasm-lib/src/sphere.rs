@@ -5,22 +5,21 @@ use crate::vec3::Vec3;
 #[derive(Copy, Clone, PartialEq)]
 pub struct Sphere {
     pub radius: f32,
-    position: Vec3,
 }
 
 impl Sphere {
-    pub fn new(radius: f32, position: Vec3) -> Self {
-        Self { radius, position }
+    pub fn new(radius: f32) -> Self {
+        Self { radius }
     }
 }
 
 impl Traceable for Sphere {
-    fn bounds(&self) -> Result<(Vec3, Vec3), &'static str> {
-        Ok((self.position - self.radius, self.position + self.radius))
+    fn bounds(&self, position: Vec3) -> Result<(Vec3, Vec3), &'static str> {
+        Ok((position - self.radius, position + self.radius))
     }
 
-    fn intersect(&self, ray: Ray) -> Option<(f32, Vec3)> {
-        let origin_to_center = ray.origin - self.position;
+    fn intersect(&self, ray: Ray, position: Vec3) -> Option<(f32, Vec3)> {
+        let origin_to_center = ray.origin - position;
         let a = ray.direction.mag_squared();
         let half_b = origin_to_center.dot(ray.direction);
         let c = origin_to_center.mag_squared() - (self.radius * self.radius);
@@ -43,13 +42,9 @@ impl Traceable for Sphere {
         }
 
         let point = ray.origin + (ray.direction * t);
-        let normal = (point - self.position).normalize();
+        let normal = (point - position).normalize();
 
         Some((t, normal))
-    }
-
-    fn position(&self) -> Vec3 {
-        self.position
     }
 }
 
@@ -59,25 +54,27 @@ mod tests {
 
     #[test]
     fn test_sphere_intersection() {
-        let sphere = Sphere::new(2.0, Vec3::new(0.0, 0.0, 10.0));
+        let sphere = Sphere::new(2.0);
+        let position = Vec3::new(0.0, 0.0, 10.0);
         let ray = Ray {
             origin: Vec3::zero(),
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
 
-        let (dist, normal) = sphere.intersect(ray).unwrap();
+        let (dist, normal) = sphere.intersect(ray, position).unwrap();
         assert_eq!(dist, 8.0);
         assert_eq!(normal, Vec3::new(0.0, 0.0, -1.0));
     }
 
     #[test]
     fn test_sphere_no_intersection() {
-        let sphere = Sphere::new(2.0, Vec3::new(0.0, 10.0, 0.0));
+        let sphere = Sphere::new(2.0);
+        let position = Vec3::new(0.0, 10.0, 0.0);
         let ray = Ray {
             origin: Vec3::zero(),
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
 
-        assert!(sphere.intersect(ray).is_none());
+        assert!(sphere.intersect(ray, position).is_none());
     }
 }
