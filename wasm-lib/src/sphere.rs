@@ -14,11 +14,11 @@ impl Sphere {
 }
 
 impl Traceable for Sphere {
-    fn bounds(&self, position: Vec3) -> Result<(Vec3, Vec3), &'static str> {
+    fn bounds(&self, position: Vec3, _rotation: Vec3) -> Result<(Vec3, Vec3), &'static str> {
         Ok((position - self.radius, position + self.radius))
     }
 
-    fn intersect(&self, ray: Ray, position: Vec3) -> Option<(f32, Vec3)> {
+    fn intersect(&self, ray: Ray, position: Vec3, _rotation: Vec3) -> Option<(f32, Vec3)> {
         let origin_to_center = ray.origin - position;
         let a = ray.direction.mag_squared();
         let half_b = origin_to_center.dot(ray.direction);
@@ -61,7 +61,7 @@ mod tests {
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
 
-        let (dist, normal) = sphere.intersect(ray, position).unwrap();
+        let (dist, normal) = sphere.intersect(ray, position, Vec3::zero()).unwrap();
         assert_eq!(dist, 8.0);
         assert_eq!(normal, Vec3::new(0.0, 0.0, -1.0));
     }
@@ -75,6 +75,6 @@ mod tests {
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
 
-        assert!(sphere.intersect(ray, position).is_none());
+        assert!(sphere.intersect(ray, position, Vec3::zero()).is_none());
     }
 }

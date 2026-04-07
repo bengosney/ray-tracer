@@ -16,11 +16,11 @@ impl Plane {
 }
 
 impl Traceable for Plane {
-    fn bounds(&self, _position: Vec3) -> Result<(Vec3, Vec3), &'static str> {
+    fn bounds(&self, _position: Vec3, _rotation: Vec3) -> Result<(Vec3, Vec3), &'static str> {
         Err("planes are infinate on two axis")
     }
 
-    fn intersect(&self, ray: Ray, position: Vec3) -> Option<(f32, Vec3)> {
+    fn intersect(&self, ray: Ray, position: Vec3, _rotation: Vec3) -> Option<(f32, Vec3)> {
         let denom = ray.direction.dot(self.normal);
         if denom.abs() < 0.0001 {
             return None;
@@ -50,7 +50,7 @@ mod tests {
             direction: Vec3::new(0.0, -1.0, 0.0),
         };
 
-        let (dist, normal) = plane.intersect(ray, position).unwrap();
+        let (dist, normal) = plane.intersect(ray, position, Vec3::zero()).unwrap();
         assert_eq!(dist, 2.0);
         assert_eq!(normal, Vec3::new(0.0, 1.0, 0.0));
     }
@@ -64,6 +64,6 @@ mod tests {
             direction: Vec3::new(1.0, 0.0, 0.0),
         };
 
-        assert!(plane.intersect(ray, position).is_none());
+        assert!(plane.intersect(ray, position, Vec3::zero()).is_none());
     }
 }
