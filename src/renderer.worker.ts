@@ -61,7 +61,7 @@ const createEntity = (obj: SceneObject): Entity => {
     case "sphere":
       return Entity.new_sphere(wasmVec3(obj.position), material, obj.radius);
     case "triangle":
-      return Entity.new_triangle(wasmVec3(obj.a), wasmVec3(obj.b), wasmVec3(obj.c), material);
+      return Entity.new_triangle(wasmVec3(obj.position), wasmVec3(obj.a), wasmVec3(obj.b), wasmVec3(obj.c), material);
     default:
       return exhaustiveMatchGuard(`unknow shapre: ${shape}`);
   }
@@ -89,7 +89,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
   );
 
   const model_mat = new Material(new Rgb(0, 0, 0), new Rgb(1, 0, 0), 0, 0, 0, 1.5);
-  scene.load_model(CUBE_MODEL, model_mat);
+  scene.load_model(CUBE_MODEL, new WasmVec3(0, 0, 5), model_mat);
 
   scene.set_gamma_correction(gamma);
 

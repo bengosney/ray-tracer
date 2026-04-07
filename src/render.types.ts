@@ -27,6 +27,7 @@ export interface Triangle extends BaseObject {
   a: Vec3;
   b: Vec3;
   c: Vec3;
+  position: Vec3;
 }
 
 export type SceneObject = Sphere | Plane | Triangle;
