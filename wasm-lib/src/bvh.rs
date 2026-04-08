@@ -95,7 +95,7 @@ impl Tree {
             entities.iter().partition(|e| e.bounds().is_ok());
 
         let entities_with_bounds: Vec<Entity> = with_bounds.into_iter().cloned().collect();
-        let node = Node::build_recursive(entities_with_bounds, 0);
+        let node = Node::build_recursive(entities_with_bounds);
 
         let unbound: Vec<Entity> = without_bounds.into_iter().cloned().collect();
 
@@ -172,10 +172,10 @@ impl Node {
         }
     }
 
-    fn build_recursive(entities: Vec<Entity>, depth: usize) -> Self {
+    fn build_recursive(entities: Vec<Entity>) -> Self {
         let aabb = Self::calculate_bounds(&entities);
 
-        if entities.len() <= (depth * 2) {
+        if entities.len() <= 4 {
             return Node::Leaf { aabb, entities };
         }
 
@@ -231,8 +231,8 @@ impl Node {
 
         Node::Branch {
             aabb,
-            left: Box::new(Self::build_recursive(left_entities, depth + 1)),
-            right: Box::new(Self::build_recursive(right_entities, depth + 1)),
+            left: Box::new(Self::build_recursive(left_entities)),
+            right: Box::new(Self::build_recursive(right_entities)),
         }
     }
 
