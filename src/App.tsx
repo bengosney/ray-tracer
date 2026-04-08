@@ -8,9 +8,9 @@ interface Settings extends WorkerSettings {
   gamma: number;
 }
 
-const FOCAL_LENGTH = 1000;
-const FOCAL_DISTANCE = FOCAL_LENGTH / 4;
-const APERTURE = FOCAL_DISTANCE / 500;
+const FOCAL_LENGTH = 550;
+const FOCAL_DISTANCE = 150;
+const APERTURE = 0.1;
 
 const SETTINGS: Settings = {
   width: 640,
@@ -94,7 +94,7 @@ for (let i = 0; i < 250; i++) {
   for (let attempts = 0; attempts < 100; attempts++) {
     const radius = 2 + Math.random() * 5;
     const x = (Math.random() - 0.5) * 150;
-    const z = MAIN_Z + (Math.random() - 0.5) * 250;
+    const z = MAIN_Z + (Math.random() - 0.5) * 175;
     const position = vec3(x, MAIN_SIZE - radius, z);
 
     let isIntersecting = false;
