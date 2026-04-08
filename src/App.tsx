@@ -90,7 +90,7 @@ const SCENE_DATA: SceneObject[] = [
   },
 ];
 
-for (let i = 0; i < 250; i++) {
+for (let i = 0; i < 0; i++) {
   for (let attempts = 0; attempts < 100; attempts++) {
     const radius = 2 + Math.random() * 5;
     const x = (Math.random() - 0.5) * 150;
