@@ -25,17 +25,17 @@ pub struct Entity {
 impl Entity {
     pub fn bounds(self) -> Result<(Vec3, Vec3), &'static str> {
         match self.shape {
-            Shape::Sphere(s) => s.bounds(self.position, self.rotation),
-            Shape::Plane(p) => p.bounds(self.position, self.rotation),
-            Shape::Triangle(t) => t.bounds(self.position, self.rotation),
+            Shape::Sphere(s) => s.bounds(self.position),
+            Shape::Plane(p) => p.bounds(self.position),
+            Shape::Triangle(t) => t.bounds(self.position),
         }
     }
 
     pub fn intersection(self, ray: Ray) -> Option<Intersection> {
         let (t, normal) = match self.shape {
-            Shape::Sphere(s) => s.intersect(ray, self.position, self.rotation)?,
-            Shape::Plane(p) => p.intersect(ray, self.position, self.rotation)?,
-            Shape::Triangle(t) => t.intersect(ray, self.position, self.rotation)?,
+            Shape::Sphere(s) => s.intersect(ray, self.position)?,
+            Shape::Plane(p) => p.intersect(ray, self.position)?,
+            Shape::Triangle(t) => t.intersect(ray, self.position)?,
         };
 
         Some(Intersection {
@@ -81,10 +81,14 @@ impl Entity {
 
     pub fn new_triangle(position: Vec3, rotation: Vec3, a: Vec3, b: Vec3, c: Vec3, material: Material) -> Self {
         Self {
-            shape: Shape::Triangle(Triangle::new(a, b, c)),
+            shape: Shape::Triangle(Triangle::new(
+                a.rotate_vec(rotation),
+                b.rotate_vec(rotation),
+                c.rotate_vec(rotation),
+            )),
             material,
             position,
-            rotation,
+            rotation: Vec3::zero(),
         }
     }
 }
