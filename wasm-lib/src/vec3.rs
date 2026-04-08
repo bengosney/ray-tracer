@@ -7,17 +7,50 @@ use std::ops::{Add, Div, Mul, Sub};
 
 use crate::rgb::Rgb;
 
+#[cfg(target_arch = "wasm32")]
+use core::arch::wasm32::*;
+
 #[wasm_bindgen]
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone)]
+#[repr(C, align(16))]
 pub struct Vec3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+    data: [f32; 4],
+}
+
+impl PartialEq for Vec3 {
+    fn eq(&self, other: &Self) -> bool {
+        self.data[0] == other.data[0] && self.data[1] == other.data[1] && self.data[2] == other.data[2]
+    }
+}
+
+impl std::fmt::Debug for Vec3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Vec3")
+            .field("x", &self.data[0])
+            .field("y", &self.data[1])
+            .field("z", &self.data[2])
+            .finish()
+    }
 }
 
 impl Display for Vec3 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{{}, {}, {}}}", self.x, self.y, self.z)
+        write!(f, "{{{}, {}, {}}}", self.data[0], self.data[1], self.data[2])
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl Vec3 {
+    #[inline(always)]
+    fn load(&self) -> v128 {
+        unsafe { v128_load(self.data.as_ptr() as *const v128) }
+    }
+
+    #[inline(always)]
+    fn from_v128(v: v128) -> Self {
+        let mut out = Vec3 { data: [0.0; 4] };
+        unsafe { v128_store(out.data.as_mut_ptr() as *mut v128, v) };
+        out
     }
 }
 
@@ -25,11 +58,41 @@ impl Display for Vec3 {
 impl Vec3 {
     #[wasm_bindgen(constructor)]
     pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Vec3 { x, y, z }
+        Vec3 { data: [x, y, z, 0.0] }
     }
 
     pub fn zero() -> Self {
-        Vec3 { x: 0.0, y: 0.0, z: 0.0 }
+        Vec3 { data: [0.0; 4] }
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn x(&self) -> f32 {
+        self.data[0]
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn y(&self) -> f32 {
+        self.data[1]
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn z(&self) -> f32 {
+        self.data[2]
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_x(&mut self, val: f32) {
+        self.data[0] = val;
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_y(&mut self, val: f32) {
+        self.data[1] = val;
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_z(&mut self, val: f32) {
+        self.data[2] = val;
     }
 
     pub fn mag(&self) -> f32 {
@@ -37,19 +100,19 @@ impl Vec3 {
     }
 
     pub fn mag_squared(&self) -> f32 {
-        self.x * self.x + self.y * self.y + self.z * self.z
+        self.data[0] * self.data[0] + self.data[1] * self.data[1] + self.data[2] * self.data[2]
     }
 
     pub fn dot(&self, rhs: Self) -> f32 {
-        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
+        self.data[0] * rhs.data[0] + self.data[1] * rhs.data[1] + self.data[2] * rhs.data[2]
     }
 
     pub fn cross(&self, rhs: Self) -> Vec3 {
-        Vec3 {
-            x: (self.y * rhs.z) - (self.z * rhs.y),
-            y: (self.z * rhs.x) - (self.x * rhs.z),
-            z: (self.x * rhs.y) - (self.y * rhs.x),
-        }
+        Vec3::new(
+            self.data[1] * rhs.data[2] - self.data[2] * rhs.data[1],
+            self.data[2] * rhs.data[0] - self.data[0] * rhs.data[2],
+            self.data[0] * rhs.data[1] - self.data[1] * rhs.data[0],
+        )
     }
 
     pub fn normalize(self) -> Self {
@@ -86,9 +149,9 @@ impl Vec3 {
     pub fn gamma(self, gamma: f32) -> Self {
         let gamma_correction = 1.0 / gamma;
         Vec3::new(
-            255.0 * (self.x / 255.0).clamp(0.0, 1.0).powf(gamma_correction),
-            255.0 * (self.y / 255.0).clamp(0.0, 1.0).powf(gamma_correction),
-            255.0 * (self.z / 255.0).clamp(0.0, 1.0).powf(gamma_correction),
+            255.0 * (self.data[0] / 255.0).clamp(0.0, 1.0).powf(gamma_correction),
+            255.0 * (self.data[1] / 255.0).clamp(0.0, 1.0).powf(gamma_correction),
+            255.0 * (self.data[2] / 255.0).clamp(0.0, 1.0).powf(gamma_correction),
         )
     }
 
@@ -132,32 +195,61 @@ impl Vec3 {
     }
 
     pub fn min(&self, other: Vec3) -> Vec3 {
-        Vec3::new(self.x.min(other.x), self.y.min(other.y), self.z.min(other.z))
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_min(self.load(), other.load()))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3::new(
+                self.data[0].min(other.data[0]),
+                self.data[1].min(other.data[1]),
+                self.data[2].min(other.data[2]),
+            )
+        }
     }
 
     pub fn max(&self, other: Vec3) -> Vec3 {
-        Vec3::new(self.x.max(other.x), self.y.max(other.y), self.z.max(other.z))
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_max(self.load(), other.load()))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3::new(
+                self.data[0].max(other.data[0]),
+                self.data[1].max(other.data[1]),
+                self.data[2].max(other.data[2]),
+            )
+        }
     }
 }
 
 impl From<Rgb> for Vec3 {
     fn from(colour: Rgb) -> Self {
-        Vec3 {
-            x: colour.r,
-            y: colour.g,
-            z: colour.b,
-        }
+        Vec3::new(colour.r, colour.g, colour.b)
     }
 }
 
 impl Add<Vec3> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn add(self, rhs: Self) -> Self::Output {
-        Vec3 {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-            z: self.z + rhs.z,
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_add(self.load(), rhs.load()))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3 {
+                data: [
+                    self.data[0] + rhs.data[0],
+                    self.data[1] + rhs.data[1],
+                    self.data[2] + rhs.data[2],
+                    0.0,
+                ],
+            }
         }
     }
 }
@@ -165,11 +257,17 @@ impl Add<Vec3> for Vec3 {
 impl Add<f32> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn add(self, rhs: f32) -> Self::Output {
-        Self {
-            x: self.x + rhs,
-            y: self.y + rhs,
-            z: self.z + rhs,
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_add(self.load(), f32x4_splat(rhs)))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3 {
+                data: [self.data[0] + rhs, self.data[1] + rhs, self.data[2] + rhs, 0.0],
+            }
         }
     }
 }
@@ -177,11 +275,22 @@ impl Add<f32> for Vec3 {
 impl Sub<Vec3> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn sub(self, rhs: Self) -> Self::Output {
-        Self {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-            z: self.z - rhs.z,
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_sub(self.load(), rhs.load()))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3 {
+                data: [
+                    self.data[0] - rhs.data[0],
+                    self.data[1] - rhs.data[1],
+                    self.data[2] - rhs.data[2],
+                    0.0,
+                ],
+            }
         }
     }
 }
@@ -189,11 +298,17 @@ impl Sub<Vec3> for Vec3 {
 impl Sub<f32> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn sub(self, rhs: f32) -> Self::Output {
-        Self {
-            x: self.x - rhs,
-            y: self.y - rhs,
-            z: self.z - rhs,
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_sub(self.load(), f32x4_splat(rhs)))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3 {
+                data: [self.data[0] - rhs, self.data[1] - rhs, self.data[2] - rhs, 0.0],
+            }
         }
     }
 }
@@ -201,11 +316,22 @@ impl Sub<f32> for Vec3 {
 impl Mul<Vec3> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn mul(self, rhs: Self) -> Self::Output {
-        Self {
-            x: self.x * rhs.x,
-            y: self.y * rhs.y,
-            z: self.z * rhs.z,
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_mul(self.load(), rhs.load()))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3 {
+                data: [
+                    self.data[0] * rhs.data[0],
+                    self.data[1] * rhs.data[1],
+                    self.data[2] * rhs.data[2],
+                    0.0,
+                ],
+            }
         }
     }
 }
@@ -213,11 +339,17 @@ impl Mul<Vec3> for Vec3 {
 impl Mul<f32> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn mul(self, rhs: f32) -> Self::Output {
-        Vec3 {
-            x: self.x * rhs,
-            y: self.y * rhs,
-            z: self.z * rhs,
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_mul(self.load(), f32x4_splat(rhs)))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3 {
+                data: [self.data[0] * rhs, self.data[1] * rhs, self.data[2] * rhs, 0.0],
+            }
         }
     }
 }
@@ -225,11 +357,22 @@ impl Mul<f32> for Vec3 {
 impl Div<Vec3> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn div(self, rhs: Vec3) -> Self::Output {
-        Vec3 {
-            x: self.x / rhs.x,
-            y: self.y / rhs.y,
-            z: self.z / rhs.z,
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_div(self.load(), rhs.load()))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3 {
+                data: [
+                    self.data[0] / rhs.data[0],
+                    self.data[1] / rhs.data[1],
+                    self.data[2] / rhs.data[2],
+                    0.0,
+                ],
+            }
         }
     }
 }
@@ -237,11 +380,17 @@ impl Div<Vec3> for Vec3 {
 impl Div<f32> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn div(self, rhs: f32) -> Self::Output {
-        Vec3 {
-            x: self.x / rhs,
-            y: self.y / rhs,
-            z: self.z / rhs,
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self::from_v128(f32x4_div(self.load(), f32x4_splat(rhs)))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Vec3 {
+                data: [self.data[0] / rhs, self.data[1] / rhs, self.data[2] / rhs, 0.0],
+            }
         }
     }
 }
@@ -249,34 +398,25 @@ impl Div<f32> for Vec3 {
 impl Mul<u32> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn mul(self, rhs: u32) -> Self::Output {
-        Vec3 {
-            x: self.x * rhs as f32,
-            y: self.y * rhs as f32,
-            z: self.z * rhs as f32,
-        }
+        self * (rhs as f32)
     }
 }
 
 impl Div<u32> for Vec3 {
     type Output = Self;
 
+    #[inline(always)]
     fn div(self, rhs: u32) -> Self::Output {
-        Vec3 {
-            x: self.x / rhs as f32,
-            y: self.y / rhs as f32,
-            z: self.z / rhs as f32,
-        }
+        self / (rhs as f32)
     }
 }
 
 impl AddAssign for Vec3 {
+    #[inline(always)]
     fn add_assign(&mut self, other: Self) {
-        *self = Self {
-            x: self.x + other.x,
-            y: self.y + other.y,
-            z: self.z + other.z,
-        };
+        *self = *self + other;
     }
 }
 
@@ -454,13 +594,12 @@ mod tests {
 
     #[test]
     fn test_gamma_identity() {
-        // gamma of 1.0 should return the same values
         let a = Vec3::new(128.0, 64.0, 200.0);
         let result = a.gamma(1.0);
 
-        assert!((result.x - 128.0).abs() < 1e-3);
-        assert!((result.y - 64.0).abs() < 1e-3);
-        assert!((result.z - 200.0).abs() < 1e-3);
+        assert!((result.x() - 128.0).abs() < 1e-3);
+        assert!((result.y() - 64.0).abs() < 1e-3);
+        assert!((result.z() - 200.0).abs() < 1e-3);
     }
 
     #[test]
@@ -468,9 +607,9 @@ mod tests {
         let a = Vec3::new(300.0, -50.0, 128.0);
         let result = a.gamma(2.2);
 
-        assert!(result.x >= 0.0 && result.x <= 255.0);
-        assert!(result.y >= 0.0 && result.y <= 255.0);
-        assert!(result.z >= 0.0 && result.z <= 255.0);
+        assert!(result.x() >= 0.0 && result.x() <= 255.0);
+        assert!(result.y() >= 0.0 && result.y() <= 255.0);
+        assert!(result.z() >= 0.0 && result.z() <= 255.0);
     }
 
     #[test]
@@ -499,24 +638,22 @@ mod tests {
 
     #[test]
     fn test_fresnel_schlick_at_zero() {
-        // At cos_theta=1 (head-on), fresnel should return f0
         let f0 = Vec3::new(0.04, 0.04, 0.04);
         let result = Vec3::fresnel_schlick(f0, 1.0);
 
-        assert!((result.x - 0.04).abs() < 1e-5);
-        assert!((result.y - 0.04).abs() < 1e-5);
-        assert!((result.z - 0.04).abs() < 1e-5);
+        assert!((result.x() - 0.04).abs() < 1e-5);
+        assert!((result.y() - 0.04).abs() < 1e-5);
+        assert!((result.z() - 0.04).abs() < 1e-5);
     }
 
     #[test]
     fn test_fresnel_schlick_at_grazing() {
-        // At cos_theta=0 (grazing angle), fresnel should approach 1.0
         let f0 = Vec3::new(0.04, 0.04, 0.04);
         let result = Vec3::fresnel_schlick(f0, 0.0);
 
-        assert!((result.x - 1.0).abs() < 1e-5);
-        assert!((result.y - 1.0).abs() < 1e-5);
-        assert!((result.z - 1.0).abs() < 1e-5);
+        assert!((result.x() - 1.0).abs() < 1e-5);
+        assert!((result.y() - 1.0).abs() < 1e-5);
+        assert!((result.z() - 1.0).abs() < 1e-5);
     }
 
     #[test]
@@ -532,9 +669,9 @@ mod tests {
         let mut rng = rand::thread_rng();
         for _ in 0..100 {
             let v = Vec3::rng(&mut rng);
-            assert!(v.x >= -0.5 && v.x <= 0.5);
-            assert!(v.y >= -0.5 && v.y <= 0.5);
-            assert!(v.z >= -0.5 && v.z <= 0.5);
+            assert!(v.x() >= -0.5 && v.x() <= 0.5);
+            assert!(v.y() >= -0.5 && v.y() <= 0.5);
+            assert!(v.z() >= -0.5 && v.z() <= 0.5);
         }
     }
 

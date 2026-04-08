@@ -18,16 +18,16 @@ impl Aabb {
         let mut t_max = f32::INFINITY;
 
         // X
-        t_min = t_min.max(t0.x.min(t1.x));
-        t_max = t_max.min(t0.x.max(t1.x));
+        t_min = t_min.max(t0.x().min(t1.x()));
+        t_max = t_max.min(t0.x().max(t1.x()));
 
         // Y
-        t_min = t_min.max(t0.y.min(t1.y));
-        t_max = t_max.min(t0.y.max(t1.y));
+        t_min = t_min.max(t0.y().min(t1.y()));
+        t_max = t_max.min(t0.y().max(t1.y()));
 
         // Z
-        t_min = t_min.max(t0.z.min(t1.z));
-        t_max = t_max.min(t0.z.max(t1.z));
+        t_min = t_min.max(t0.z().min(t1.z()));
+        t_max = t_max.min(t0.z().max(t1.z()));
 
         if t_min <= t_max && t_max > 0.0 {
             Some(t_min.max(0.0))
@@ -45,10 +45,10 @@ enum Axis {
 
 impl From<Vec3> for Axis {
     fn from(v: Vec3) -> Self {
-        let v_abs = Vec3::new(v.x.abs(), v.y.abs(), v.z.abs());
-        if v_abs.x > v_abs.y && v_abs.x > v_abs.z {
+        let v_abs = Vec3::new(v.x().abs(), v.y().abs(), v.z().abs());
+        if v_abs.x() > v_abs.y() && v_abs.x() > v_abs.z() {
             Axis::X
-        } else if v_abs.y > v_abs.z {
+        } else if v_abs.y() > v_abs.z() {
             Axis::Y
         } else {
             Axis::Z
@@ -183,9 +183,9 @@ impl Node {
         let axis = Axis::from(aabb);
         let midpoint = (aabb.min + aabb.max) * 0.5;
         let mid_val = match axis {
-            Axis::X => midpoint.x,
-            Axis::Y => midpoint.y,
-            Axis::Z => midpoint.z,
+            Axis::X => midpoint.x(),
+            Axis::Y => midpoint.y(),
+            Axis::Z => midpoint.z(),
         };
 
         let mut left_entities = Vec::new();
@@ -194,9 +194,9 @@ impl Node {
         for entity in entities {
             let pos = entity.position();
             let val = match axis {
-                Axis::X => pos.x,
-                Axis::Y => pos.y,
-                Axis::Z => pos.z,
+                Axis::X => pos.x(),
+                Axis::Y => pos.y(),
+                Axis::Z => pos.z(),
             };
 
             if val < mid_val {
@@ -218,9 +218,9 @@ impl Node {
                 let a_pos = a.position();
                 let b_pos = b.position();
                 let (a_val, b_val) = match axis {
-                    Axis::X => (a_pos.x, b_pos.x),
-                    Axis::Y => (a_pos.y, b_pos.y),
-                    Axis::Z => (a_pos.z, b_pos.z),
+                    Axis::X => (a_pos.x(), b_pos.x()),
+                    Axis::Y => (a_pos.y(), b_pos.y()),
+                    Axis::Z => (a_pos.z(), b_pos.z()),
                 };
                 a_val.partial_cmp(&b_val).unwrap_or(std::cmp::Ordering::Equal)
             });
@@ -290,8 +290,8 @@ mod tests {
     fn test_calculate_bounds_empty() {
         let entities = vec![];
         let bounds = Node::calculate_bounds(&entities);
-        assert_eq!(bounds.min.x, f32::INFINITY);
-        assert_eq!(bounds.max.x, f32::NEG_INFINITY);
+        assert_eq!(bounds.min.x(), f32::INFINITY);
+        assert_eq!(bounds.max.x(), f32::NEG_INFINITY);
     }
 
     #[test]

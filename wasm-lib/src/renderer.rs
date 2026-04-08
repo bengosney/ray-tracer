@@ -44,9 +44,9 @@ fn samples_to_pixel_map_into(samples: &[Vec<Vec3>], out: &mut Vec<u8>) {
     out.clear();
     for row in samples {
         for sample in row {
-            out.push(sample.x as u8);
-            out.push(sample.y as u8);
-            out.push(sample.z as u8);
+            out.push(sample.x() as u8);
+            out.push(sample.y() as u8);
+            out.push(sample.z() as u8);
             out.push(255);
         }
     }
@@ -90,21 +90,16 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
                 use rand::Rng;
                 let x = (i - half_width) as f32 + rng.gen_range(-0.5..0.5);
                 let y = (j - half_height) as f32 + rng.gen_range(-0.5..0.5);
-                let direction = (Vec3 {
-                    x,
-                    y,
-                    z: focal_length as f32,
-                })
-                .normalize();
+                let direction = Vec3::new(x, y, focal_length as f32).normalize();
 
                 let focus_point = origin + direction * focal_distance;
 
                 let (jitter_x, jitter_y) = random_in_unit_disc(&mut rng);
-                let jittered_origin = Vec3 {
-                    x: origin.x + jitter_x * aperture * 0.5,
-                    y: origin.y + jitter_y * aperture * 0.5,
-                    z: origin.z,
-                };
+                let jittered_origin = Vec3::new(
+                    origin.x() + jitter_x * aperture * 0.5,
+                    origin.y() + jitter_y * aperture * 0.5,
+                    origin.z(),
+                );
                 let jittered_direction = (focus_point - jittered_origin).normalize();
 
                 let res = tracer::trace(
@@ -135,7 +130,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
         avg_buf = pixels;
 
         let end = Date::now();
-        log(&format!("took (bvh) {}", (end - start) / 1000.0));
+        log(&format!("took (bvh,glam) {}", (end - start) / 1000.0));
         request_animation_frame(f.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
 

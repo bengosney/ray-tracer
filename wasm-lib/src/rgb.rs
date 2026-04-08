@@ -21,9 +21,9 @@ impl Rgb {
 impl From<Vec3> for Rgb {
     fn from(vec: Vec3) -> Self {
         Rgb {
-            r: vec.x,
-            g: vec.y,
-            b: vec.z,
+            r: vec.x(),
+            g: vec.y(),
+            b: vec.z(),
         }
     }
 }

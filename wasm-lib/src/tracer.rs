@@ -11,7 +11,7 @@ pub fn find_intersection(ray: Ray, bvh_tree: &Tree) -> Option<Intersection> {
 }
 
 fn sky_color(ray: Ray) -> Vec3 {
-    let t = 0.5 * (ray.direction.y + 1.0);
+    let t = 0.5 * (ray.direction.y() + 1.0);
     (Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t) * 175.0
 }
 
@@ -75,7 +75,7 @@ pub fn trace(ray: Ray, bvh_tree: &Tree, steps: u32, rng: &mut impl Rng) -> Vec3 
                 let f0_dielectric = Vec3::new(0.04, 0.04, 0.04);
                 let f0 = Vec3::lerp(f0_dielectric, albedo, material.metallic);
                 let fresnel = Vec3::fresnel_schlick(f0, cos_theta);
-                let reflectance = ((fresnel.x + fresnel.y + fresnel.z) / 3.0).clamp(0.05, 0.95);
+                let reflectance = ((fresnel.x() + fresnel.y() + fresnel.z()) / 3.0).clamp(0.05, 0.95);
 
                 if r < reflectance {
                     // Specular Reflection
