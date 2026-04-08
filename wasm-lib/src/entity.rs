@@ -79,13 +79,9 @@ impl Entity {
         }
     }
 
-    pub fn new_triangle(position: Vec3, rotation: Vec3, a: Vec3, b: Vec3, c: Vec3, material: Material) -> Self {
+    pub fn new_triangle(position: Vec3, a: Vec3, b: Vec3, c: Vec3, material: Material) -> Self {
         Self {
-            shape: Shape::Triangle(Triangle::new(
-                a.rotate_vec(rotation),
-                b.rotate_vec(rotation),
-                c.rotate_vec(rotation),
-            )),
+            shape: Shape::Triangle(Triangle::new(a, b, c)),
             material,
             position,
             rotation: Vec3::zero(),

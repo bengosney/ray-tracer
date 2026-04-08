@@ -79,11 +79,14 @@ impl Scene {
         renderer::render(self, ctx);
     }
 
-    pub fn load_model(&mut self, text: &str, position: Vec3, rotation: Vec3, material: Material) {
+    pub fn load_model(&mut self, text: &str, position: Vec3, rotation: Vec3, scale: f32, material: Material) {
         let model = Model::parse(text);
         let mut tri_count = 0;
-        for t in model.triangles() {
-            let entity = Entity::new_triangle(position, rotation, t.0, t.1, t.2, material);
+        for (a, b, c) in model.triangles() {
+            let a = a.rotate_vec(rotation) * scale;
+            let b = b.rotate_vec(rotation) * scale;
+            let c = c.rotate_vec(rotation) * scale;
+            let entity = Entity::new_triangle(position, a, b, c, material);
             self.add_entity(entity);
             tri_count += 1;
         }

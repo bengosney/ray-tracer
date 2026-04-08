@@ -96,7 +96,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
   );
 
   const model_mat = new Material(new Rgb(0, 0, 0), new Rgb(1, 0, 0), 0, 0, 0, 1.5);
-  scene.load_model(CUBE_MODEL, new WasmVec3(-0.5, -0.5, 15), new WasmVec3(0, Math.PI / 4, 0), model_mat);
+  scene.load_model(CUBE_MODEL, new WasmVec3(-10, -10, 100), new WasmVec3(0, Math.PI / 4, 0), 10, model_mat);
 
   scene.set_gamma_correction(gamma);
 
