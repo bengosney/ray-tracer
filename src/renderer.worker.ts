@@ -10078,7 +10078,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
     settings.fov,
   );
 
-  const model_mat = new Material(new Rgb(0, 0, 0), new Rgb(0.5, 0.5, 0.5), 0, 0, 0, 1.5);
+  const model_mat = new Material(new Rgb(0, 0, 0), new Rgb(0.5, 0.5, 0.5), 0, 0.5, 0, 1.5);
   scene.load_model(RABBIT_MODEL, new WasmVec3(15, 34, 100), new WasmVec3(Math.PI, 0, 0), 250, model_mat);
 
   scene.set_gamma_correction(gamma);
