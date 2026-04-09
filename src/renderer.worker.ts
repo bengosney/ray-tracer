@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-globals */
-import initWASM, { Scene, Entity, Material } from "wasm-lib";
+import initWASM, { initThreadPool, Scene, Entity, Material } from "wasm-lib";
 import type { SceneObject, WorkerInMessage } from "./render.types";
 import { exhaustiveMatchGuard } from "./utils/typeguard";
 import { wasmRGB, wasmVec3 } from "./utils/conversions";
@@ -38,6 +38,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
   const { canvas, settings, entities, models, gamma } = e.data;
 
   await initWASM();
+  await initThreadPool(navigator.hardwareConcurrency);
 
   const context = canvas.getContext("2d")!;
 
