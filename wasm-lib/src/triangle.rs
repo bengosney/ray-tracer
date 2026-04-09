@@ -7,11 +7,24 @@ pub struct Triangle {
     pub a: Vec3,
     pub b: Vec3,
     pub c: Vec3,
+    edge1: Vec3,
+    edge2: Vec3,
+    normal: Vec3,
 }
 
 impl Triangle {
     pub fn new(a: Vec3, b: Vec3, c: Vec3) -> Self {
-        Self { a, b, c }
+        let edge1 = b - a;
+        let edge2 = c - a;
+        let normal = edge1.cross(edge2).normalize();
+        Self {
+            a,
+            b,
+            c,
+            edge1,
+            edge2,
+            normal,
+        }
     }
 }
 
@@ -36,42 +49,35 @@ impl Traceable for Triangle {
     }
 
     fn intersect(&self, ray: Ray, position: Vec3) -> Option<(f32, Vec3)> {
-        let a = self.a + position;
-        let b = self.b + position;
-        let c = self.c + position;
-
-        let edge1 = b - a;
-        let edge2 = c - a;
-
-        let h = ray.direction.cross(edge2);
-        let det = edge1.dot(h);
+        let h = ray.direction.cross(self.edge2);
+        let det = self.edge1.dot(h);
 
         if det.abs() < f32::EPSILON {
             return None;
         }
 
         let inv_det = 1.0 / det;
-        let s = ray.origin - a;
+        let s = ray.origin - (self.a + position);
         let u = inv_det * s.dot(h);
 
         if !(0.0..=1.0).contains(&u) {
             return None;
         }
 
-        let q = s.cross(edge1);
+        let q = s.cross(self.edge1);
         let v = inv_det * ray.direction.dot(q);
 
         if v < 0.0 || u + v > 1.0 {
             return None;
         }
 
-        let t = inv_det * edge2.dot(q);
+        let t = inv_det * self.edge2.dot(q);
 
         if t < f32::EPSILON {
             return None;
         }
 
-        let mut normal = edge1.cross(edge2).normalize();
+        let mut normal = self.normal;
         if normal.dot(ray.direction) > 0.0 {
             normal = normal * -1.0;
         }
