@@ -2,7 +2,8 @@ import { useRef } from "react";
 import "./App.css";
 import { vec3, mag, sub } from "./utils/math";
 import { rgb } from "./utils/colour";
-import type { WorkerInMessage, SceneObject, WorkerSettings } from "./render.types";
+import type { WorkerInMessage, SceneObject, WorkerSettings, ModelData } from "./render.types";
+import RABBIT_MODEL from "./models/rabbit";
 
 interface Settings extends WorkerSettings {
   gamma: number;
@@ -128,6 +129,21 @@ for (let i = 0; i < 250; i++) {
   }
 }
 
+const MODELS: ModelData[] = [
+  {
+    obj: RABBIT_MODEL,
+    position: vec3(15, 34, 100),
+    rotation: vec3(Math.PI, 0, 0),
+    scale: 250,
+    emission: rgb(0, 0, 0),
+    albedo: rgb(0.5, 0.5, 0.5),
+    metallic: 0,
+    roughness: 0.5,
+    transmission: 0,
+    ior: 1.5,
+  },
+];
+
 function startRender(canvas: HTMLCanvasElement): Worker {
   const worker = new Worker(new URL("./renderer.worker.ts", import.meta.url));
   const offscreen = canvas.transferControlToOffscreen();
@@ -138,6 +154,7 @@ function startRender(canvas: HTMLCanvasElement): Worker {
     canvas: offscreen,
     settings: SETTINGS,
     entities: SCENE_DATA,
+    models: MODELS,
     gamma: SETTINGS.gamma,
   };
   worker.postMessage(msg, [offscreen]);

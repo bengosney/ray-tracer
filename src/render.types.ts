@@ -32,6 +32,19 @@ export interface Triangle extends BaseObject {
 
 export type SceneObject = Sphere | Plane | Triangle;
 
+export interface ModelData {
+  obj: string;
+  position: Vec3;
+  rotation: Vec3;
+  scale: number;
+  emission: RGB;
+  albedo: RGB;
+  metallic: number;
+  roughness: number;
+  transmission: number;
+  ior: number;
+}
+
 export interface WorkerSettings {
   width: number;
   height: number;
@@ -48,6 +61,7 @@ export type WorkerInMessage = {
   canvas: OffscreenCanvas;
   settings: WorkerSettings;
   entities: SceneObject[];
+  models: ModelData[];
   gamma: number;
 };
 
