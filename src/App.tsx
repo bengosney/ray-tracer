@@ -136,10 +136,10 @@ const MODELS: ModelData[] = [
     rotation: vec3(Math.PI, 0, 0),
     scale: 250,
     emission: rgb(0, 0, 0),
-    albedo: rgb(0.5, 0.5, 0.5),
+    albedo: rgb(0.76, 0.46, 0.33),
     metallic: 0,
-    roughness: 0.5,
-    transmission: 0,
+    roughness: 0.8,
+    transmission: 0.0,
     ior: 1.5,
   },
 ];
