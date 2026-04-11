@@ -2,8 +2,8 @@ use js_sys::Date;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::Clamped;
-use web_sys::{ImageData, OffscreenCanvasRenderingContext2d};
+use wasm_bindgen::JsCast;
+use web_sys::OffscreenCanvasRenderingContext2d;
 
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
@@ -129,8 +129,32 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
         }
 
         samples_to_pixel_map_into(&pixels, &mut pixel_buf);
-        let image_data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&pixel_buf), width, height).unwrap();
-        local_context.put_image_data(&image_data, 0.0, 0.0).ok();
+
+        let expected_size = (width * height * 4) as usize;
+        if pixel_buf.len() != expected_size {
+            log(&format!(
+                "Error: pixel_buf size mismatch. Expected {}, got {}",
+                expected_size,
+                pixel_buf.len()
+            ));
+            avg_buf = pixels;
+            return;
+        }
+
+        match local_context.create_image_data_with_sw_and_sh(width as f64, height as f64) {
+            Ok(image_data) => {
+                let array: js_sys::Uint8ClampedArray = js_sys::Reflect::get(&image_data, &"data".into())
+                    .unwrap()
+                    .unchecked_into();
+                array.copy_from(&pixel_buf);
+                if let Err(e) = local_context.put_image_data(&image_data, 0.0, 0.0) {
+                    log(&format!("Error putting image data: {:?}", e));
+                }
+            }
+            Err(e) => {
+                log(&format!("Error creating ImageData: {:?}", e));
+            }
+        }
 
         avg_buf = pixels;
 

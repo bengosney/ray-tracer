@@ -4,51 +4,35 @@
   "private": true,
   "homepage": "https://bengosney.github.io/ray-tracer",
   "dependencies": {
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.23",
     "@types/react": "^18.0.34",
     "@types/react-dom": "^18.0.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
-    "wasm-lib": "file:wasm-lib/pkg",
-    "web-vitals": "^2.1.4"
+    "wasm-lib": "file:wasm-lib/pkg"
   },
   "devDependencies": {
-    "gh-pages": "^5.0.0"
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-react": "^7.26.3",
+    "@babel/preset-typescript": "^7.26.0",
+    "babel-loader": "^9.2.1",
+    "css-loader": "^7.1.2",
+    "gh-pages": "^5.0.0",
+    "html-webpack-plugin": "^5.6.3",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.99.7",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.1"
   },
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "start": "npm run watch:react",
     "build": "npm run build:wasm && npm run build:react",
-    "build:react": "react-scripts build",
+    "build:react": "webpack --mode production",
     "build:wasm": "cd wasm-lib && wasm-pack build --target web --out-dir pkg",
-    "watch:react": "react-scripts start",
-    "watch:wasm": "while inotifywait -qr -e close_write --exclude 'pkg/' wasm-lib/; do npm run build:wasm; touch src/App.tsx; done",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "watch:react": "webpack serve --mode development",
+    "watch:wasm": "while inotifywait -qr -e close_write --exclude 'pkg/' wasm-lib/; do npm run build:wasm; done"
   }
 }
