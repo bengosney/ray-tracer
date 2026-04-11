@@ -1,5 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = (env, argv) => {
   const isProd = argv.mode === "production";
@@ -79,6 +80,16 @@ module.exports = (env, argv) => {
         templateParameters: {
           publicUrl: isProd ? "/ray-tracer" : "",
         },
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: "public/coi-serviceworker.js", to: "." },
+          { from: "public/favicon.ico", to: "." },
+          { from: "public/logo192.png", to: "." },
+          { from: "public/logo512.png", to: "." },
+          { from: "public/manifest.json", to: "." },
+          { from: "public/robots.txt", to: "." },
+        ],
       }),
     ],
     devServer: {
