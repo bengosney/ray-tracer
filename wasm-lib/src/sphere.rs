@@ -1,4 +1,5 @@
 use crate::ray::Ray;
+use crate::traceable::Traceable;
 use crate::vec3::Vec3;
 
 #[derive(Copy, Clone, PartialEq)]
@@ -10,12 +11,14 @@ impl Sphere {
     pub fn new(radius: f32) -> Self {
         Self { radius }
     }
+}
 
-    pub fn bounds(&self, position: Vec3) -> Result<(Vec3, Vec3), &'static str> {
+impl Traceable for Sphere {
+    fn bounds(&self, position: Vec3) -> Result<(Vec3, Vec3), &'static str> {
         Ok((position - self.radius, position + self.radius))
     }
 
-    pub fn intersect(&self, position: Vec3, ray: Ray) -> Option<(f32, Vec3)> {
+    fn intersect(&self, ray: Ray, position: Vec3) -> Option<(f32, Vec3)> {
         let origin_to_center = ray.origin - position;
         let a = ray.direction.mag_squared();
         let half_b = origin_to_center.dot(ray.direction);
@@ -58,7 +61,7 @@ mod tests {
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
 
-        let (dist, normal) = sphere.intersect(position, ray).unwrap();
+        let (dist, normal) = sphere.intersect(ray, position).unwrap();
         assert_eq!(dist, 8.0);
         assert_eq!(normal, Vec3::new(0.0, 0.0, -1.0));
     }
@@ -72,6 +75,6 @@ mod tests {
             direction: Vec3::new(0.0, 0.0, 1.0),
         };
 
-        assert!(sphere.intersect(position, ray).is_none());
+        assert!(sphere.intersect(ray, position).is_none());
     }
 }

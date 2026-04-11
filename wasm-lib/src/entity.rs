@@ -2,20 +2,24 @@ use wasm_bindgen::prelude::*;
 
 use crate::plane::Plane;
 use crate::sphere::Sphere;
+use crate::traceable::Traceable;
+use crate::triangle::Triangle;
 use crate::{intersection::Intersection, material::Material, ray::Ray, vec3::Vec3};
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum Shape {
     Sphere(Sphere),
     Plane(Plane),
+    Triangle(Triangle),
 }
 
 #[wasm_bindgen()]
 #[derive(Copy, Clone, PartialEq)]
 pub struct Entity {
-    position: Vec3,
     shape: Shape,
     material: Material,
+    position: Vec3,
+    rotation: Vec3,
 }
 
 impl Entity {
@@ -23,13 +27,15 @@ impl Entity {
         match self.shape {
             Shape::Sphere(s) => s.bounds(self.position),
             Shape::Plane(p) => p.bounds(self.position),
+            Shape::Triangle(t) => t.bounds(self.position),
         }
     }
 
     pub fn intersection(self, ray: Ray) -> Option<Intersection> {
         let (t, normal) = match self.shape {
-            Shape::Sphere(s) => s.intersect(self.position, ray)?,
-            Shape::Plane(p) => p.intersect(self.position, ray)?,
+            Shape::Sphere(s) => s.intersect(ray, self.position)?,
+            Shape::Plane(p) => p.intersect(ray, self.position)?,
+            Shape::Triangle(t) => t.intersect(ray, self.position)?,
         };
 
         Some(Intersection {
@@ -57,17 +63,28 @@ impl Entity {
 impl Entity {
     pub fn new_sphere(position: Vec3, material: Material, radius: f32) -> Self {
         Self {
-            position,
             shape: Shape::Sphere(Sphere::new(radius)),
             material,
+            position,
+            rotation: Vec3::zero(),
         }
     }
 
     pub fn new_plane(position: Vec3, material: Material, normal: Vec3) -> Self {
         Self {
-            position,
             shape: Shape::Plane(Plane::new(normal)),
             material,
+            position,
+            rotation: Vec3::zero(),
+        }
+    }
+
+    pub fn new_triangle(position: Vec3, a: Vec3, b: Vec3, c: Vec3, material: Material) -> Self {
+        Self {
+            shape: Shape::Triangle(Triangle::new(a, b, c)),
+            material,
+            position,
+            rotation: Vec3::zero(),
         }
     }
 }

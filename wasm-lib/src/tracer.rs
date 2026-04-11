@@ -11,7 +11,7 @@ pub fn find_intersection(ray: Ray, bvh_tree: &Tree) -> Option<Intersection> {
 }
 
 fn sky_color(ray: Ray) -> Vec3 {
-    let t = 0.5 * (ray.direction.y + 1.0);
+    let t = (0.5 * (ray.direction.y + ray.direction.x + 1.0)).clamp(0.0, 1.0);
     (Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t) * 175.0
 }
 

@@ -131,6 +131,28 @@ impl Vec3 {
         a * (1.0 - t) + b * t
     }
 
+    pub fn rotate_vec(self, vec: Vec3) -> Self {
+        self.rotate(vec.x, vec.y, vec.z)
+    }
+
+    pub fn rotate(self, pitch: f32, yaw: f32, roll: f32) -> Self {
+        // Rx (pitch)
+        let (sp, cp) = pitch.sin_cos();
+        let x1 = self.x;
+        let y1 = cp * self.y - sp * self.z;
+        let z1 = sp * self.y + cp * self.z;
+
+        // Ry (yaw)
+        let (sy, cy) = yaw.sin_cos();
+        let x2 = cy * x1 + sy * z1;
+        let y2 = y1;
+        let z2 = -sy * x1 + cy * z1;
+
+        // Rz (roll)
+        let (sr, cr) = roll.sin_cos();
+        Vec3::new(cr * x2 - sr * y2, sr * x2 + cr * y2, z2)
+    }
+
     pub fn min(&self, other: Vec3) -> Vec3 {
         Vec3::new(self.x.min(other.x), self.y.min(other.y), self.z.min(other.z))
     }

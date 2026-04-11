@@ -1,9 +1,10 @@
 use js_sys::Date;
+use rayon::prelude::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::Clamped;
-use web_sys::{ImageData, OffscreenCanvasRenderingContext2d};
+use wasm_bindgen::JsCast;
+use web_sys::OffscreenCanvasRenderingContext2d;
 
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
@@ -33,23 +34,30 @@ fn random_in_unit_disc(rng: &mut impl rand::Rng) -> (f32, f32) {
 }
 
 fn avg_samples_into(samples: &[Vec<Vec3>], count: u32, out: &mut [Vec<Vec3>]) {
-    for (row_out, row_in) in out.iter_mut().zip(samples.iter()) {
-        for (v_out, v_in) in row_out.iter_mut().zip(row_in.iter()) {
-            *v_out = *v_in / count;
-        }
-    }
+    out.par_iter_mut()
+        .zip(samples.par_iter())
+        .for_each(|(row_out, row_in)| {
+            for (v_out, v_in) in row_out.iter_mut().zip(row_in.iter()) {
+                *v_out = *v_in / count;
+            }
+        });
 }
 
 fn samples_to_pixel_map_into(samples: &[Vec<Vec3>], out: &mut Vec<u8>) {
-    out.clear();
-    for row in samples {
-        for sample in row {
-            out.push(sample.x as u8);
-            out.push(sample.y as u8);
-            out.push(sample.z as u8);
-            out.push(255);
-        }
-    }
+    let height = samples.len();
+    let width = samples[0].len();
+    out.resize(height * width * 4, 0);
+
+    out.par_chunks_mut(width * 4)
+        .zip(samples.par_iter())
+        .for_each(|(row_out, row_in)| {
+            for (i, sample) in row_in.iter().enumerate() {
+                row_out[i * 4] = sample.x as u8;
+                row_out[i * 4 + 1] = sample.y as u8;
+                row_out[i * 4 + 2] = sample.z as u8;
+                row_out[i * 4 + 3] = 255;
+            }
+        });
 }
 
 pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
@@ -76,7 +84,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
     let mut s = 0;
-    let mut rng = SmallRng::from_entropy();
+
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         if s > sample_count {
             log("done.");
@@ -85,11 +93,13 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
         }
         log(&format!("Sample {}", s));
         let start = Date::now();
-        for j in 0..height as i32 {
-            for i in 0..width as i32 {
+
+        samples.par_iter_mut().enumerate().for_each(|(j, row)| {
+            let mut rng = SmallRng::seed_from_u64((s as u64) << 32 | (j as u64));
+            for (i, sample) in row.iter_mut().enumerate() {
                 use rand::Rng;
-                let x = (i - half_width) as f32 + rng.gen_range(-0.5..0.5);
-                let y = (j - half_height) as f32 + rng.gen_range(-0.5..0.5);
+                let x = (i as i32 - half_width) as f32 + rng.gen_range(-0.5..0.5);
+                let y = (j as i32 - half_height) as f32 + rng.gen_range(-0.5..0.5);
                 let direction = (Vec3 {
                     x,
                     y,
@@ -116,9 +126,9 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
                     bounces,
                     &mut rng,
                 );
-                samples[j as usize][i as usize] += res;
+                *sample += res;
             }
-        }
+        });
 
         s += 1;
         avg_samples_into(&samples, s, &mut avg_buf);
@@ -129,8 +139,32 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
         }
 
         samples_to_pixel_map_into(&pixels, &mut pixel_buf);
-        let image_data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&pixel_buf), width, height).unwrap();
-        local_context.put_image_data(&image_data, 0.0, 0.0).ok();
+
+        let expected_size = (width * height * 4) as usize;
+        if pixel_buf.len() != expected_size {
+            log(&format!(
+                "Error: pixel_buf size mismatch. Expected {}, got {}",
+                expected_size,
+                pixel_buf.len()
+            ));
+            avg_buf = pixels;
+            return;
+        }
+
+        match local_context.create_image_data_with_sw_and_sh(width as f64, height as f64) {
+            Ok(image_data) => {
+                let array: js_sys::Uint8ClampedArray = js_sys::Reflect::get(&image_data, &"data".into())
+                    .unwrap()
+                    .unchecked_into();
+                array.copy_from(&pixel_buf);
+                if let Err(e) = local_context.put_image_data(&image_data, 0.0, 0.0) {
+                    log(&format!("Error putting image data: {:?}", e));
+                }
+            }
+            Err(e) => {
+                log(&format!("Error creating ImageData: {:?}", e));
+            }
+        }
 
         avg_buf = pixels;
 

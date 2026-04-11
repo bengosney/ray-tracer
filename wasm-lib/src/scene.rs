@@ -3,8 +3,11 @@ use wasm_bindgen::prelude::*;
 use web_sys::OffscreenCanvasRenderingContext2d;
 
 use crate::entity::Entity;
+use crate::material::Material;
+use crate::model::Model;
 use crate::post_processing::{GammaCorrection, ImageFilter, PostProcess};
-use crate::renderer;
+use crate::vec3::Vec3;
+use crate::{log, renderer};
 
 #[wasm_bindgen]
 pub struct Scene {
@@ -74,5 +77,19 @@ impl Scene {
 
     pub fn render(&self, ctx: &OffscreenCanvasRenderingContext2d) {
         renderer::render(self, ctx);
+    }
+
+    pub fn load_model(&mut self, text: &str, position: Vec3, rotation: Vec3, scale: f32, material: Material) {
+        let model = Model::parse(text);
+        let mut tri_count = 0;
+        for (a, b, c) in model.triangles() {
+            let a = a.rotate_vec(rotation) * scale;
+            let b = b.rotate_vec(rotation) * scale;
+            let c = c.rotate_vec(rotation) * scale;
+            let entity = Entity::new_triangle(position, a, b, c, material);
+            self.add_entity(entity);
+            tri_count += 1;
+        }
+        log(&format!("triangle loaded: {}", tri_count));
     }
 }
