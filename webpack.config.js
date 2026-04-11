@@ -75,6 +75,10 @@ module.exports = (env, argv) => {
     plugins: [
       new HtmlWebpackPlugin({
         template: "./public/index.html",
+        // Force the script to be absolute to avoid path issues with SPAs
+        templateParameters: {
+          publicUrl: isProd ? "/ray-tracer" : "",
+        },
       }),
     ],
     devServer: {
