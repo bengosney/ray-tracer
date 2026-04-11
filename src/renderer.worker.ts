@@ -31,7 +31,7 @@ const createEntity = (obj: SceneObject): Entity => {
   }
 };
 
-ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
+ctx.onmessage = async (e: MessageEvent<WorkerInMessage>): Promise<void> => {
   console.log("renderer worker message", e.data);
   if (e.data.type !== "start") return;
 
@@ -72,5 +72,5 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
     scene.add_entity(entity);
   }
 
-  scene.render(context as any);
+  scene.render(context);
 };

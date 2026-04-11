@@ -4,7 +4,7 @@ import useTimeSinceLast from "./hooks/useTimeSinceLast";
 interface CanvasProps extends React.ComponentPropsWithoutRef<"canvas"> {
   frame: (context: CanvasRenderingContext2D, since: number) => void;
   init?: (context: CanvasRenderingContext2D) => void;
-  initDependency?: any;
+  initDependency?: unknown;
   clear?: string | true;
   animating?: boolean;
 }
@@ -34,7 +34,7 @@ const Canvas = ({
     }
   }, [context, init, initDependency, context?.canvas.width, context?.canvas.height]);
 
-  useEffect(() => {
+  useEffect((): (() => void) | void => {
     if (context && requestRef.current === 0) {
       const draw = () => {
         if (clear) {
