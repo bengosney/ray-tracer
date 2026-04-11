@@ -2,6 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          registrations.forEach(function(reg) {
+            var swUrl = reg.active && reg.active.scriptURL || reg.installing && reg.installing.scriptURL || '';
+            if (!swUrl.endsWith('/coi-serviceworker.js')) {
+              reg.unregister();
+            }
+          });
+        });
+      }
+    </script>
     <script src="<%= publicUrl %>/coi-serviceworker.js"></script>
     <link rel="icon" href="<%= publicUrl %>/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
