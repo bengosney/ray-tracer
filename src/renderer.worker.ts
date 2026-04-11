@@ -27,7 +27,7 @@ const createEntity = (obj: SceneObject): Entity => {
     case "triangle":
       return Entity.new_triangle(wasmVec3(obj.position), wasmVec3(obj.a), wasmVec3(obj.b), wasmVec3(obj.c), material);
     default:
-      return exhaustiveMatchGuard(`unknow shapre: ${shape}`);
+      return exhaustiveMatchGuard(shape);
   }
 };
 
