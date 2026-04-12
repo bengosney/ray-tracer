@@ -1,34 +1,31 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import "./App.css";
 import { vec3, mag, sub } from "./utils/math";
 import { rgb } from "./utils/colour";
-import type { WorkerInMessage, SceneObject, WorkerSettings, ModelData } from "./render.types";
+import type { WorkerInMessage, SceneObject, ModelData } from "./render.types";
 import RABBIT_MODEL from "./models/rabbit";
+import RenderSettings, { type Settings } from "./RenderSettings";
 
-interface Settings extends WorkerSettings {
-  gamma: number;
-}
-
-const FOCAL_LENGTH = 550;
-const FOCAL_DISTANCE = 150;
-const APERTURE = 0.1;
-
-const SETTINGS: Settings = {
-  width: 640,
-  height: 480,
-  focalLength: FOCAL_LENGTH,
-  focalDistance: FOCAL_DISTANCE,
-  aperture: APERTURE,
-  samples: 500,
-  bounces: 50,
-  fov: 80,
-  gamma: 2.2,
+const DEFAULT_SETTINGS: Settings = {
+  render: {
+    width: 640,
+    height: 480,
+    focalLength: 550,
+    focalDistance: 150,
+    aperture: 0.1,
+    samples: 500,
+    bounces: 50,
+    gamma: 2.2,
+  },
+  scene: {
+    showRabbit: false,
+    sphereCount: 250,
+  },
 };
 
-const MAIN_Z: number = SETTINGS.focalDistance;
 const MAIN_SIZE: number = 25;
 
-const SCENE_DATA: SceneObject[] = [
+const BASE_SCENE: SceneObject[] = [
   // floor
   {
     shape: "plane",
@@ -45,7 +42,7 @@ const SCENE_DATA: SceneObject[] = [
   {
     shape: "sphere",
     radius: MAIN_SIZE,
-    position: vec3(0, 0, MAIN_Z),
+    position: vec3(0, 0, DEFAULT_SETTINGS.render.focalDistance),
     emission: rgb(0, 0, 0),
     albedo: rgb(0.9, 0.9, 0.9),
     metallic: 0.0,
@@ -57,7 +54,7 @@ const SCENE_DATA: SceneObject[] = [
   {
     shape: "sphere",
     radius: MAIN_SIZE,
-    position: vec3(MAIN_SIZE * 2.5, 0, MAIN_Z),
+    position: vec3(MAIN_SIZE * 2.5, 0, DEFAULT_SETTINGS.render.focalDistance),
     emission: rgb(768, 0, 0),
     albedo: rgb(1.0, 0.0, 0.0),
     metallic: 0.0,
@@ -69,7 +66,7 @@ const SCENE_DATA: SceneObject[] = [
   {
     shape: "sphere",
     radius: MAIN_SIZE,
-    position: vec3(MAIN_SIZE * 2.5 * 0.6, 0, MAIN_Z + MAIN_SIZE * 2),
+    position: vec3(MAIN_SIZE * 2.5 * 0.6, 0, DEFAULT_SETTINGS.render.focalDistance + MAIN_SIZE * 2),
     emission: rgb(0, 0, 0),
     albedo: rgb(0.6, 0.92, 0.2),
     metallic: 1.0,
@@ -81,7 +78,7 @@ const SCENE_DATA: SceneObject[] = [
   {
     shape: "sphere",
     radius: MAIN_SIZE,
-    position: vec3(-(MAIN_SIZE * 2.5 * 0.6), 0, MAIN_Z - MAIN_SIZE * 1),
+    position: vec3(-(MAIN_SIZE * 2.5 * 0.6), 0, DEFAULT_SETTINGS.render.focalDistance - MAIN_SIZE * 1),
     emission: rgb(0, 0, 0),
     albedo: rgb(0.1, 0.3, 1.0),
     metallic: 0.0,
@@ -91,60 +88,64 @@ const SCENE_DATA: SceneObject[] = [
   },
 ];
 
-for (let i = 0; i < 250; i++) {
-  for (let attempts = 0; attempts < 100; attempts++) {
-    const radius = 2 + Math.random() * 5;
-    const x = (Math.random() - 0.5) * 150;
-    const z = MAIN_Z + (Math.random() - 0.5) * 175;
-    const position = vec3(x, MAIN_SIZE - radius, z);
+function buildSceneData(sphereCount: number): SceneObject[] {
+  const scene: SceneObject[] = [...BASE_SCENE];
 
-    let isIntersecting = false;
-    for (const obj of SCENE_DATA) {
-      if (obj.shape === "sphere") {
-        if (mag(sub(position, obj.position)) < radius + obj.radius) {
-          isIntersecting = true;
-          break;
+  for (let i = 0; i < sphereCount; i++) {
+    for (let attempts = 0; attempts < 100; attempts++) {
+      const radius = 2 + Math.random() * 5;
+      const x = (Math.random() - 0.5) * 150;
+      const z = DEFAULT_SETTINGS.render.focalDistance + (Math.random() - 0.5) * 175;
+      const position = vec3(x, MAIN_SIZE - radius, z);
+
+      let isIntersecting = false;
+      for (const obj of scene) {
+        if (obj.shape === "sphere") {
+          if (mag(sub(position, obj.position)) < radius + obj.radius) {
+            isIntersecting = true;
+            break;
+          }
         }
       }
-    }
 
-    if (!isIntersecting) {
-      const metallic = Math.random() > 0.6 ? 1.0 : 0.0;
-      const transmission = !metallic && Math.random() > 0.7 ? 1.0 : 0.0;
+      if (!isIntersecting) {
+        const metallic = Math.random() > 0.6 ? 1.0 : 0.0;
+        const transmission = !metallic && Math.random() > 0.7 ? 1.0 : 0.0;
 
-      SCENE_DATA.push({
-        shape: "sphere",
-        radius,
-        position,
-        emission: rgb(0, 0, 0),
-        albedo: rgb(Math.random(), Math.random(), Math.random()),
-        metallic,
-        roughness: Math.random(),
-        transmission,
-        ior: 1.5,
-      });
+        scene.push({
+          shape: "sphere",
+          radius,
+          position,
+          emission: rgb(0, 0, 0),
+          albedo: rgb(Math.random(), Math.random(), Math.random()),
+          metallic,
+          roughness: Math.random(),
+          transmission,
+          ior: 1.5,
+        });
 
-      break;
+        break;
+      }
     }
   }
+
+  return scene;
 }
 
-const MODELS: ModelData[] = [
-  {
-    obj: RABBIT_MODEL,
-    position: vec3(15, 34, 100),
-    rotation: vec3(Math.PI, 0, 0),
-    scale: 250,
-    emission: rgb(0, 0, 0),
-    albedo: rgb(0.76, 0.46, 0.33),
-    metallic: 0,
-    roughness: 0.8,
-    transmission: 0.0,
-    ior: 1.5,
-  },
-];
+const RABBIT_MODEL_DATA: ModelData = {
+  obj: RABBIT_MODEL,
+  position: vec3(15, 34, 100),
+  rotation: vec3(Math.PI, 0, 0),
+  scale: 250,
+  emission: rgb(0, 0, 0),
+  albedo: rgb(0.76, 0.46, 0.33),
+  metallic: 0,
+  roughness: 0.8,
+  transmission: 0.0,
+  ior: 1.5,
+};
 
-function startRender(canvas: HTMLCanvasElement): Worker {
+function startRender(canvas: HTMLCanvasElement, settings: Settings): Worker {
   const worker = new Worker(new URL("./renderer.worker.ts", import.meta.url));
   const offscreen = canvas.transferControlToOffscreen();
   worker.onerror = (e) => console.error("worker error:", e);
@@ -152,10 +153,10 @@ function startRender(canvas: HTMLCanvasElement): Worker {
   const msg: WorkerInMessage = {
     type: "start",
     canvas: offscreen,
-    settings: SETTINGS,
-    entities: SCENE_DATA,
-    models: MODELS,
-    gamma: SETTINGS.gamma,
+    settings: settings.render,
+    entities: buildSceneData(settings.scene.sphereCount),
+    models: settings.scene.showRabbit ? [RABBIT_MODEL_DATA] : [],
+    gamma: settings.render.gamma,
   };
   worker.postMessage(msg, [offscreen]);
 
@@ -164,6 +165,7 @@ function startRender(canvas: HTMLCanvasElement): Worker {
 
 function App() {
   const workerRef = useRef<Worker | null>(null);
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   const canvasRefCallback = (canvas: HTMLCanvasElement | null) => {
     if (!canvas) return;
@@ -171,12 +173,20 @@ function App() {
       workerRef.current.terminate();
       workerRef.current = null;
     }
-    workerRef.current = startRender(canvas);
+    workerRef.current = startRender(canvas, settings);
   };
+
+  const handleSettingsChange = (next: Settings) => setSettings(next);
 
   return (
     <div className="App">
-      <canvas ref={canvasRefCallback} width={SETTINGS.width} height={SETTINGS.height} />
+      <canvas
+        key={JSON.stringify(settings)}
+        ref={canvasRefCallback}
+        width={settings.render.width}
+        height={settings.render.height}
+      />
+      <RenderSettings settings={settings} onSettingsChange={handleSettingsChange} />
     </div>
   );
 }

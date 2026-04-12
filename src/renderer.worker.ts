@@ -50,7 +50,6 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>): Promise<void> => {
     settings.aperture,
     settings.samples,
     settings.bounces,
-    settings.fov,
   );
 
   for (const model of models) {

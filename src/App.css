@@ -7,10 +7,65 @@ body, html {
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  padding: 1rem 0;
 }
 
 canvas {
   outline: 1px solid gray;
   max-width: 95vw;
   max-height: 95vh;
+}
+
+.settings {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+}
+
+.settings fieldset {
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.settings legend {
+  color: #aaa;
+  padding: 0 0.25rem;
+}
+
+.settings ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.settings label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  color: #ccc;
+}
+
+.settings input[type="number"] {
+  width: 5rem;
+  background: #1a1d23;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: white;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.8rem;
+}
+
+.settings input[type="number"]:focus {
+  outline: none;
+  border-color: #888;
+}
+
+.settings input[type="checkbox"] {
+  accent-color: #888;
 }

@@ -53,7 +53,6 @@ export interface WorkerSettings {
   aperture: number;
   samples: number;
   bounces: number;
-  fov: number;
 }
 
 export type WorkerInMessage = {
