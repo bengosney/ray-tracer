@@ -31,7 +31,7 @@ canvas {
   flex-wrap: wrap;
 }
 
-.settings fieldset {
+fieldset {
   border: 1px solid #444;
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
@@ -79,6 +79,27 @@ canvas {
   accent-color: #888;
 }
 
+.settings button {
+  background: #1a1d23;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #ccc;
+  padding: 0.15rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.settings button:hover:not(:disabled) {
+  border-color: #888;
+  color: white;
+}
+
+.settings button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .stats {
   display: flex;
   gap: 1rem;
@@ -87,5 +108,18 @@ canvas {
   span {
     white-space: nowrap;
     flex-grow: 1;
+  }
+}
+
+.settings .controls {
+  display: flex;
+  gap: 1em;
+  width: 100%;
+  flex-wrap: wrap;
+
+  button {
+    flex: 1;
+    min-width: 0;
+    padding: .25rem .5rem;
   }
 }

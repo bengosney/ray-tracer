@@ -166,7 +166,10 @@ function startRender(canvas: HTMLCanvasElement, settings: Settings): Worker {
 
 function App() {
   const workerRef = useRef<Worker | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [renderKey, setRenderKey] = useState(0);
+  const [running, setRunning] = useState(false);
   const [renderStats, setRenderStats] = useState<{ sampleIndex: number; durationMs: number } | null>(null);
   const [sampleTimes, setSampleTimes] = useState<number[]>([]);
   const addSampleTime = (sampleTime: number) =>
@@ -182,10 +185,12 @@ function App() {
     setSampleTimes([]);
     setRenderStats(null);
   };
+  const updateRunning = () => setRunning(workerRef.current !== null);
 
   const canvasRefCallback = useCallback(
     (canvas: HTMLCanvasElement | null) => {
       if (!canvas) return;
+      canvasRef.current = canvas;
       if (workerRef.current) {
         workerRef.current.terminate();
         workerRef.current = null;
@@ -198,9 +203,30 @@ function App() {
         }
       };
       workerRef.current = worker;
+      updateRunning();
     },
     [settings],
   );
+
+  const handleStop = () => {
+    workerRef.current?.terminate();
+    workerRef.current = null;
+    updateRunning();
+  };
+
+  const handleRestart = () => {
+    resetStats();
+    setRenderKey((k) => k + 1);
+  };
+
+  const handleSave = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = "render.png";
+    a.click();
+  };
 
   const handleSettingsChange = (next: Settings) => {
     setSettings(next);
@@ -224,13 +250,23 @@ function App() {
   return (
     <div className="App">
       <canvas
-        key={JSON.stringify(settings)}
+        key={`${JSON.stringify(settings)}-${renderKey}`}
         ref={canvasRefCallback}
         width={settings.render.width}
         height={settings.render.height}
       />
       <p className="stats">{statusMessage}</p>
       <RenderSettings settings={settings} onSettingsChange={handleSettingsChange} />
+      <fieldset className="settings">
+        <legend>Controls</legend>
+        <div className="controls">
+          <button onClick={handleSave}>Save PNG</button>
+          <button onClick={handleStop} disabled={!running}>
+            Stop
+          </button>
+          <button onClick={handleRestart}>Restart</button>
+        </div>
+      </fieldset>
     </div>
   );
 }
