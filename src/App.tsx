@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import "./App.css";
 import { vec3, mag, sub } from "./utils/math";
 import { rgb } from "./utils/colour";
-import type { WorkerInMessage, SceneObject, ModelData } from "./render.types";
+import type { WorkerInMessage, WorkerOutMessage, SceneObject, ModelData } from "./render.types";
 import RABBIT_MODEL from "./models/rabbit";
 import RenderSettings, { type Settings } from "./RenderSettings";
+import { humanDuration } from "./utils/time";
 
 const DEFAULT_SETTINGS: Settings = {
   render: {
@@ -166,17 +167,59 @@ function startRender(canvas: HTMLCanvasElement, settings: Settings): Worker {
 function App() {
   const workerRef = useRef<Worker | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-
-  const canvasRefCallback = (canvas: HTMLCanvasElement | null) => {
-    if (!canvas) return;
-    if (workerRef.current) {
-      workerRef.current.terminate();
-      workerRef.current = null;
-    }
-    workerRef.current = startRender(canvas, settings);
+  const [renderStats, setRenderStats] = useState<{ sampleIndex: number; durationMs: number } | null>(null);
+  const [sampleTimes, setSampleTimes] = useState<number[]>([]);
+  const addSampleTime = (sampleTime: number) =>
+    setSampleTimes((times) => {
+      const newTimes = [...times];
+      newTimes.push(sampleTime);
+      return newTimes;
+    });
+  const avgSampleTime = (): number => {
+    return sampleTimes.reduce((acc, curr) => acc + curr, 0) / sampleTimes.length;
+  };
+  const resetStats = () => {
+    setSampleTimes([]);
+    setRenderStats(null);
   };
 
-  const handleSettingsChange = (next: Settings) => setSettings(next);
+  const canvasRefCallback = useCallback(
+    (canvas: HTMLCanvasElement | null) => {
+      if (!canvas) return;
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+      const worker = startRender(canvas, settings);
+      worker.onmessage = (e: MessageEvent<WorkerOutMessage>) => {
+        if (e.data.type === "sample") {
+          setRenderStats({ sampleIndex: e.data.sampleIndex, durationMs: e.data.durationMs });
+          addSampleTime(e.data.durationMs);
+        }
+      };
+      workerRef.current = worker;
+    },
+    [settings],
+  );
+
+  const handleSettingsChange = (next: Settings) => {
+    setSettings(next);
+    resetStats();
+  };
+  const samplesLeft = settings.render.samples - (renderStats?.sampleIndex || 0);
+  const eta = samplesLeft * avgSampleTime();
+  const statusMessage = renderStats ? (
+    <>
+      <span>
+        Sample: {renderStats.sampleIndex}/{settings.render.samples}
+      </span>
+      <span>Last: {humanDuration(renderStats.durationMs)}</span>
+      <span>Avg: {humanDuration(avgSampleTime())}</span>
+      <span>Eta: {humanDuration(eta)}</span>
+    </>
+  ) : (
+    "Initialising Render..."
+  );
 
   return (
     <div className="App">
@@ -186,6 +229,7 @@ function App() {
         width={settings.render.width}
         height={settings.render.height}
       />
+      <p className="stats">{statusMessage}</p>
       <RenderSettings settings={settings} onSettingsChange={handleSettingsChange} />
     </div>
   );

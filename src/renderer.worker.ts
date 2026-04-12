@@ -71,5 +71,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>): Promise<void> => {
     scene.add_entity(entity);
   }
 
-  scene.render(context);
+  scene.render(context, (sampleIndex: number, durationMs: number) => {
+    ctx.postMessage({ type: "sample", sampleIndex, durationMs });
+  });
 };

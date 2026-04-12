@@ -1,4 +1,4 @@
-use crate::{log, vec3::Vec3};
+use crate::vec3::Vec3;
 
 struct Face {
     vertices: Vec<Vec3>,
@@ -46,8 +46,6 @@ impl Model {
                 _ => {}
             }
         }
-
-        log("model loaded");
 
         Self {
             _vertices: vertices,
