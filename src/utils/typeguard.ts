@@ -1,3 +1,3 @@
-export const exhaustiveMatchGuard = (message: string): never => {
-  throw new Error(message);
+export const exhaustiveMatchGuard = (value: never): never => {
+  throw new Error(`Unexpected value: ${JSON.stringify(value)}`);
 };

@@ -27,11 +27,11 @@ const createEntity = (obj: SceneObject): Entity => {
     case "triangle":
       return Entity.new_triangle(wasmVec3(obj.position), wasmVec3(obj.a), wasmVec3(obj.b), wasmVec3(obj.c), material);
     default:
-      return exhaustiveMatchGuard(`unknow shapre: ${shape}`);
+      return exhaustiveMatchGuard(shape);
   }
 };
 
-ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
+ctx.onmessage = async (e: MessageEvent<WorkerInMessage>): Promise<void> => {
   console.log("renderer worker message", e.data);
   if (e.data.type !== "start") return;
 
@@ -50,7 +50,6 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
     settings.aperture,
     settings.samples,
     settings.bounces,
-    settings.fov,
   );
 
   for (const model of models) {
@@ -72,5 +71,5 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
     scene.add_entity(entity);
   }
 
-  scene.render(context as any);
+  scene.render(context);
 };

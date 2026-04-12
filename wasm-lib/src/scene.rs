@@ -19,7 +19,6 @@ pub struct Scene {
     pub appature: f32,
     pub samples: u32,
     pub bounces: u32,
-    pub fov: f32,
     post_processors: Vec<Rc<dyn PostProcess>>,
 }
 
@@ -45,7 +44,6 @@ impl Scene {
         appature: f32,
         samples: u32,
         bounces: u32,
-        fov: f32,
     ) -> Self {
         Self {
             entities: vec![],
@@ -56,7 +54,6 @@ impl Scene {
             appature,
             samples,
             bounces,
-            fov,
             post_processors: vec![],
         }
     }
