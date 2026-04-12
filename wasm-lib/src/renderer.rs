@@ -60,7 +60,7 @@ fn samples_to_pixel_map_into(samples: &[Vec<Vec3>], out: &mut Vec<u8>) {
         });
 }
 
-pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
+pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d, on_sample: js_sys::Function) {
     let half_width = (scene.width / 2) as i32;
     let half_height = (scene.height / 2) as i32;
 
@@ -75,6 +75,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
     let post_processors: Vec<Rc<dyn PostProcess>> = scene.post_processors().iter().map(Rc::clone).collect();
 
     let local_context = ctx.clone();
+    let on_sample = on_sample.clone();
 
     let origin = Vec3::zero();
     let mut samples: Vec<Vec<Vec3>> = vec![vec![Vec3::new(0.0, 0.0, 0.0); width as usize]; height as usize];
@@ -86,12 +87,10 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
     let mut s = 0;
 
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        if s > sample_count {
-            log("done.");
+        if s >= sample_count {
             let _ = f.borrow_mut().take();
             return;
         }
-        log(&format!("Sample {}", s));
         let start = Date::now();
 
         samples.par_iter_mut().enumerate().for_each(|(j, row)| {
@@ -169,7 +168,8 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d) {
         avg_buf = pixels;
 
         let end = Date::now();
-        log(&format!("took (bvh) {}", (end - start) / 1000.0));
+        let duration_ms = end - start;
+        let _ = on_sample.call2(&JsValue::NULL, &JsValue::from(s), &JsValue::from(duration_ms));
         request_animation_frame(f.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
 

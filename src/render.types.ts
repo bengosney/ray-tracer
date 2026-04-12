@@ -64,4 +64,4 @@ export type WorkerInMessage = {
   gamma: number;
 };
 
-export type WorkerOutMessage = { type: "done" };
+export type WorkerOutMessage = { type: "done" } | { type: "sample"; sampleIndex: number; durationMs: number };

@@ -78,3 +78,14 @@ canvas {
 .settings input[type="checkbox"] {
   accent-color: #888;
 }
+
+.stats {
+  display: flex;
+  gap: 1rem;
+  font-size: min(3.5vw, 1rem);
+
+  span {
+    white-space: nowrap;
+    flex-grow: 1;
+  }
+}
