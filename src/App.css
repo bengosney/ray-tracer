@@ -7,13 +7,20 @@ body, html {
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
-  padding: 1rem 0;
+  padding: 0;
+}
+
+.App {
+  max-width: 95vw;
+  padding: min(2.5vh, 1rem) 0;
 }
 
 canvas {
   outline: 1px solid gray;
-  max-width: 95vw;
+  max-width: 100%;
   max-height: 95vh;
+  display: block;
+  margin: auto;
 }
 
 .settings {
@@ -21,12 +28,14 @@ canvas {
   gap: 1rem;
   margin-top: 1rem;
   font-size: 0.8rem;
+  flex-wrap: wrap;
 }
 
 .settings fieldset {
   border: 1px solid #444;
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
+  flex-grow: 1;
 }
 
 .settings legend {
