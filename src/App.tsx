@@ -166,6 +166,7 @@ function startRender(canvas: HTMLCanvasElement, settings: Settings): Worker {
 
 function App() {
   const workerRef = useRef<Worker | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [renderStats, setRenderStats] = useState<{ sampleIndex: number; durationMs: number } | null>(null);
   const [sampleTimes, setSampleTimes] = useState<number[]>([]);
@@ -186,6 +187,7 @@ function App() {
   const canvasRefCallback = useCallback(
     (canvas: HTMLCanvasElement | null) => {
       if (!canvas) return;
+      canvasRef.current = canvas;
       if (workerRef.current) {
         workerRef.current.terminate();
         workerRef.current = null;
@@ -201,6 +203,15 @@ function App() {
     },
     [settings],
   );
+
+  const handleSave = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = "render.png";
+    a.click();
+  };
 
   const handleSettingsChange = (next: Settings) => {
     setSettings(next);
@@ -231,6 +242,14 @@ function App() {
       />
       <p className="stats">{statusMessage}</p>
       <RenderSettings settings={settings} onSettingsChange={handleSettingsChange} />
+      <fieldset className="settings">
+        <legend>Controls</legend>
+        <ul>
+          <li>
+            <button onClick={handleSave}>Save PNG</button>
+          </li>
+        </ul>
+      </fieldset>
     </div>
   );
 }
