@@ -168,6 +168,8 @@ function App() {
   const workerRef = useRef<Worker | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [renderKey, setRenderKey] = useState(0);
+  const [running, setRunning] = useState(false);
   const [renderStats, setRenderStats] = useState<{ sampleIndex: number; durationMs: number } | null>(null);
   const [sampleTimes, setSampleTimes] = useState<number[]>([]);
   const addSampleTime = (sampleTime: number) =>
@@ -183,6 +185,7 @@ function App() {
     setSampleTimes([]);
     setRenderStats(null);
   };
+  const updateRunning = () => setRunning(workerRef.current !== null);
 
   const canvasRefCallback = useCallback(
     (canvas: HTMLCanvasElement | null) => {
@@ -200,9 +203,21 @@ function App() {
         }
       };
       workerRef.current = worker;
+      updateRunning();
     },
     [settings],
   );
+
+  const handleStop = () => {
+    workerRef.current?.terminate();
+    workerRef.current = null;
+    updateRunning();
+  };
+
+  const handleRestart = () => {
+    resetStats();
+    setRenderKey((k) => k + 1);
+  };
 
   const handleSave = () => {
     const canvas = canvasRef.current;
@@ -235,7 +250,7 @@ function App() {
   return (
     <div className="App">
       <canvas
-        key={JSON.stringify(settings)}
+        key={`${JSON.stringify(settings)}-${renderKey}`}
         ref={canvasRefCallback}
         width={settings.render.width}
         height={settings.render.height}
@@ -244,11 +259,13 @@ function App() {
       <RenderSettings settings={settings} onSettingsChange={handleSettingsChange} />
       <fieldset className="settings">
         <legend>Controls</legend>
-        <ul>
-          <li>
-            <button onClick={handleSave}>Save PNG</button>
-          </li>
-        </ul>
+        <div className="controls">
+          <button onClick={handleSave}>Save PNG</button>
+          <button onClick={handleStop} disabled={!running}>
+            Stop
+          </button>
+          <button onClick={handleRestart}>Restart</button>
+        </div>
       </fieldset>
     </div>
   );

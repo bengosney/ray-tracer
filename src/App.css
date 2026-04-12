@@ -90,9 +90,14 @@ fieldset {
   width: 100%;
 }
 
-.settings button:hover {
+.settings button:hover:not(:disabled) {
   border-color: #888;
   color: white;
+}
+
+.settings button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .stats {
@@ -103,5 +108,18 @@ fieldset {
   span {
     white-space: nowrap;
     flex-grow: 1;
+  }
+}
+
+.settings .controls {
+  display: flex;
+  gap: 1em;
+  width: 100%;
+  flex-wrap: wrap;
+
+  button {
+    flex: 1;
+    min-width: 0;
+    padding: .25rem .5rem;
   }
 }
