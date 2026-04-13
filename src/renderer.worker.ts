@@ -40,7 +40,10 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>): Promise<void> => {
   await initWASM();
   await initThreadPool(navigator.hardwareConcurrency);
 
-  const context = canvas.getContext("2d")!;
+  const context = canvas.getContext("2d");
+  if (!(context instanceof OffscreenCanvasRenderingContext2D)) {
+    throw new Error("Failed to get 2d context from OffscreenCanvas");
+  }
 
   const scene = new Scene(
     settings.width,

@@ -5,7 +5,7 @@ import { rgb } from "./utils/colour";
 import type { WorkerInMessage, WorkerOutMessage, SceneObject, ModelData } from "./render.types";
 import RABBIT_MODEL from "./models/rabbit";
 import RenderSettings, { type Settings } from "./RenderSettings";
-import { humanDuration } from "./utils/time";
+import RenderStats from "./RenderStats";
 
 const DEFAULT_SETTINGS: Settings = {
   render: {
@@ -178,9 +178,6 @@ function App() {
       newTimes.push(sampleTime);
       return newTimes;
     });
-  const avgSampleTime = (): number => {
-    return sampleTimes.reduce((acc, curr) => acc + curr, 0) / sampleTimes.length;
-  };
   const resetStats = () => {
     setSampleTimes([]);
     setRenderStats(null);
@@ -232,21 +229,6 @@ function App() {
     setSettings(next);
     resetStats();
   };
-  const samplesLeft = settings.render.samples - (renderStats?.sampleIndex || 0);
-  const eta = samplesLeft * avgSampleTime();
-  const statusMessage = renderStats ? (
-    <>
-      <span>
-        Sample: {renderStats.sampleIndex}/{settings.render.samples}
-      </span>
-      <span>Last: {humanDuration(renderStats.durationMs)}</span>
-      <span>Avg: {humanDuration(avgSampleTime())}</span>
-      <span>Eta: {humanDuration(eta)}</span>
-    </>
-  ) : (
-    "Initialising Render..."
-  );
-
   return (
     <div className="App">
       <canvas
@@ -255,7 +237,16 @@ function App() {
         width={settings.render.width}
         height={settings.render.height}
       />
-      <p className="stats">{statusMessage}</p>
+      {renderStats ? (
+        <RenderStats
+          sampleIndex={renderStats.sampleIndex}
+          totalSamples={settings.render.samples}
+          lastDurationMs={renderStats.durationMs}
+          sampleTimes={sampleTimes}
+        />
+      ) : (
+        <p className="stats">Initialising Render...</p>
+      )}
       <RenderSettings settings={settings} onSettingsChange={handleSettingsChange} />
       <fieldset className="settings">
         <legend>Controls</legend>
