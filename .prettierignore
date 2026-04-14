@@ -3,7 +3,6 @@ node_modules
 .hypothesis
 .sass-cache
 .vscode
-*.css
 js/external/**/*.js
 pages/static/pages/js/script.js
 js/build/**/*.js
