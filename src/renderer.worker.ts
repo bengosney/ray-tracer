@@ -46,8 +46,8 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>): Promise<void> => {
   }
 
   const camera = new Camera(
-    wasmVec3({ x: 0, y: 0, z: 0 }),
-    wasmVec3({ x: 0, y: 0, z: 0 }),
+    wasmVec3(settings.cameraPosition),
+    wasmVec3(settings.cameraRotation),
     settings.focalLength,
     settings.focalDistance,
     settings.aperture,
