@@ -34,7 +34,7 @@ function startRender(canvas: HTMLCanvasElement, settings: Settings): Worker {
     type: "start",
     canvas: offscreen,
     settings: settings.render,
-    entities: buildSceneData(settings.scene.sphereCount, settings.render.focalDistance),
+    entities: buildSceneData(settings.scene.sphereCount, settings.render.focalDistance, settings.scene.seed),
     models: settings.scene.showRabbit ? [RABBIT_MODEL_DATA] : [],
     gamma: settings.render.gamma,
   };

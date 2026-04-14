@@ -16,6 +16,7 @@ const DEFAULT_SETTINGS: Settings = {
     gamma: 2.2,
   },
   scene: {
+    seed: Math.floor(Math.random() * 9_999_999),
     showRabbit: false,
     sphereCount: 250,
   },

@@ -10,6 +10,7 @@ export interface Settings {
     gamma: number;
   };
   scene: {
+    seed: number;
     showRabbit: boolean;
     sphereCount: number;
   };
@@ -106,6 +107,18 @@ function RenderSettings({ settings, onSettingsChange }: RenderSettingsProps) {
       <fieldset>
         <legend>Scene</legend>
         <ul>
+          <li>
+            <label>
+              Seed
+              <input
+                type="number"
+                min={0}
+                max={9_999_999}
+                value={settings.scene.seed}
+                onChange={(e) => updateScene({ seed: e.target.valueAsNumber })}
+              />
+            </label>
+          </li>
           <li>
             <label>
               Sphere Count
