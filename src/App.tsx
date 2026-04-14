@@ -65,7 +65,7 @@ function App() {
         <legend>Controls</legend>
         <div className="controls">
           <button onClick={handlers.handleSave}>
-            <Download /> Download PNG
+            <Download /> Download
           </button>
           <button onClick={handlers.handleStop} disabled={!stats.running}>
             <CircleStop /> Stop
