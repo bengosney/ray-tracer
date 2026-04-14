@@ -123,3 +123,46 @@ fieldset {
     padding: .25rem .5rem;
   }
 }
+
+.camera-controls {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+
+  button:has(svg) {
+    font-size: clamp(16px, 3vw, 24px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .5em;
+    svg {
+      display: block;
+      width: 1em;
+      height: 1em;
+    }
+  }
+}
+
+.control-group {
+  flex-grow: 1;
+}
+
+.control-label {
+  display: block;
+  color: #aaa;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+}
+
+.settings input[type="range"] {
+  width: 5rem;
+  accent-color: #888;
+}

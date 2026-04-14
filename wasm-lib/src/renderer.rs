@@ -66,9 +66,12 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d, on_sample:
 
     let width = scene.width;
     let height = scene.height;
-    let focal_length = scene.focal_length;
-    let focal_distance = scene.focal_distance as f32;
-    let aperture = scene.appature;
+    let camera = scene.camera();
+    let focal_length = camera.focal_length;
+    let focal_distance = camera.focal_distance as f32;
+    let aperture = camera.aperture;
+    let camera_origin = camera.position;
+    let camera_rotation = camera.rotation;
     let bounces = scene.bounces;
     let bvh = Tree::build(scene.entities());
     let sample_count = scene.samples;
@@ -77,7 +80,7 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d, on_sample:
     let local_context = ctx.clone();
     let on_sample = on_sample.clone();
 
-    let origin = Vec3::zero();
+    let origin = camera_origin;
     let mut samples: Vec<Vec<Vec3>> = vec![vec![Vec3::new(0.0, 0.0, 0.0); width as usize]; height as usize];
     let mut avg_buf: Vec<Vec<Vec3>> = vec![vec![Vec3::new(0.0, 0.0, 0.0); width as usize]; height as usize];
     let mut pixel_buf: Vec<u8> = Vec::with_capacity((width * height * 4) as usize);
@@ -104,7 +107,8 @@ pub fn render(scene: &Scene, ctx: &OffscreenCanvasRenderingContext2d, on_sample:
                     y,
                     z: focal_length as f32,
                 })
-                .normalize();
+                .normalize()
+                .rotate_vec(camera_rotation);
 
                 let focus_point = origin + direction * focal_distance;
 

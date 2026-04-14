@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-globals */
-import initWASM, { initThreadPool, Scene, Entity, Material } from "wasm-lib";
+import initWASM, { initThreadPool, Scene, Entity, Material, Camera } from "wasm-lib";
 import type { SceneObject, WorkerInMessage } from "./render.types";
 import { exhaustiveMatchGuard } from "./utils/typeguard";
 import { wasmRGB, wasmVec3 } from "./utils/conversions";
@@ -45,15 +45,15 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>): Promise<void> => {
     throw new Error("Failed to get 2d context from OffscreenCanvas");
   }
 
-  const scene = new Scene(
-    settings.width,
-    settings.height,
+  const camera = new Camera(
+    wasmVec3(settings.cameraPosition),
+    wasmVec3(settings.cameraRotation),
     settings.focalLength,
     settings.focalDistance,
     settings.aperture,
-    settings.samples,
-    settings.bounces,
   );
+
+  const scene = new Scene(settings.width, settings.height, camera, settings.samples, settings.bounces);
 
   for (const model of models) {
     const material = new Material(

@@ -1,16 +1,22 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
+export interface CameraSettings {
+  position: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number };
+  focalLength: number;
+  focalDistance: number;
+  aperture: number;
+}
+
 export interface Settings {
   render: {
     width: number;
     height: number;
-    focalLength: number;
-    focalDistance: number;
-    aperture: number;
     samples: number;
     bounces: number;
     gamma: number;
   };
+  camera: CameraSettings;
   scene: {
     seed: number;
     showRabbit: boolean;
@@ -41,6 +47,12 @@ function RenderSettings({ settings, onSettingsChange }: RenderSettingsProps) {
 
   const updateRender = (patch: Partial<Settings["render"]>) => {
     const next = { ...local, render: { ...local.render, ...patch } };
+    setLocal(next);
+    debouncedChange(next);
+  };
+
+  const updateCamera = (patch: Partial<Settings["camera"]>) => {
+    const next = { ...local, camera: { ...local.camera, ...patch } };
     setLocal(next);
     debouncedChange(next);
   };
@@ -80,12 +92,30 @@ function RenderSettings({ settings, onSettingsChange }: RenderSettingsProps) {
           </li>
           <li>
             <label>
+              Gamma
+              <input
+                type="number"
+                min={1}
+                step={0.1}
+                value={local.render.gamma}
+                onChange={(e) => updateRender({ gamma: e.target.valueAsNumber })}
+              />
+            </label>
+          </li>
+        </ul>
+      </fieldset>
+
+      <fieldset>
+        <legend>Camera</legend>
+        <ul>
+          <li>
+            <label>
               Focal Length
               <input
                 type="number"
                 min={1}
-                value={local.render.focalLength}
-                onChange={(e) => updateRender({ focalLength: e.target.valueAsNumber })}
+                value={local.camera.focalLength}
+                onChange={(e) => updateCamera({ focalLength: e.target.valueAsNumber })}
               />
             </label>
           </li>
@@ -95,8 +125,8 @@ function RenderSettings({ settings, onSettingsChange }: RenderSettingsProps) {
               <input
                 type="number"
                 min={1}
-                value={local.render.focalDistance}
-                onChange={(e) => updateRender({ focalDistance: e.target.valueAsNumber })}
+                value={local.camera.focalDistance}
+                onChange={(e) => updateCamera({ focalDistance: e.target.valueAsNumber })}
               />
             </label>
           </li>
@@ -107,20 +137,8 @@ function RenderSettings({ settings, onSettingsChange }: RenderSettingsProps) {
                 type="number"
                 min={0}
                 step={0.01}
-                value={local.render.aperture}
-                onChange={(e) => updateRender({ aperture: e.target.valueAsNumber })}
-              />
-            </label>
-          </li>
-          <li>
-            <label>
-              Gamma
-              <input
-                type="number"
-                min={1}
-                step={0.1}
-                value={local.render.gamma}
-                onChange={(e) => updateRender({ gamma: e.target.valueAsNumber })}
+                value={local.camera.aperture}
+                onChange={(e) => updateCamera({ aperture: e.target.valueAsNumber })}
               />
             </label>
           </li>

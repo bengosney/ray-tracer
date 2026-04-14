@@ -48,6 +48,8 @@ export interface ModelData {
 export interface WorkerSettings {
   width: number;
   height: number;
+  cameraPosition: Vec3;
+  cameraRotation: Vec3;
   focalLength: number;
   focalDistance: number;
   aperture: number;

@@ -33,8 +33,15 @@ function startRender(canvas: HTMLCanvasElement, settings: Settings): Worker {
   const msg: WorkerInMessage = {
     type: "start",
     canvas: offscreen,
-    settings: settings.render,
-    entities: buildSceneData(settings.scene.sphereCount, settings.render.focalDistance, settings.scene.seed),
+    settings: {
+      ...settings.render,
+      cameraPosition: settings.camera.position,
+      cameraRotation: settings.camera.rotation,
+      focalLength: settings.camera.focalLength,
+      focalDistance: settings.camera.focalDistance,
+      aperture: settings.camera.aperture,
+    },
+    entities: buildSceneData(settings.scene.sphereCount, settings.camera.focalDistance, settings.scene.seed),
     models: settings.scene.showRabbit ? [RABBIT_MODEL_DATA] : [],
     gamma: settings.render.gamma,
   };

@@ -1,4 +1,5 @@
 mod bvh;
+mod camera;
 mod entity;
 mod intersection;
 mod material;

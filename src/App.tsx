@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import "./App.css";
+import CameraControls from "./CameraControls";
 import RenderSettings, { type Settings } from "./RenderSettings";
 import RenderStats from "./RenderStats";
 import { useRenderer } from "./hooks/useRenderer";
@@ -8,12 +9,16 @@ const DEFAULT_SETTINGS: Settings = {
   render: {
     width: 640,
     height: 480,
-    focalLength: 550,
-    focalDistance: 150,
-    aperture: 0.1,
     samples: 500,
     bounces: 50,
     gamma: 2.2,
+  },
+  camera: {
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    focalLength: 550,
+    focalDistance: 150,
+    aperture: 0.1,
   },
   scene: {
     seed: Math.floor(Math.random() * 9_999_999),
@@ -48,6 +53,12 @@ function App() {
       ) : (
         <p className="stats">Initialising Render...</p>
       )}
+      <div className="settings">
+        <CameraControls
+          camera={settings.camera}
+          onCameraChange={(camera) => handleSettingsChange({ ...settings, camera })}
+        />
+      </div>
       <RenderSettings settings={settings} onSettingsChange={handleSettingsChange} />
       <fieldset className="settings">
         <legend>Controls</legend>
