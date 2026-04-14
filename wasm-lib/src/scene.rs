@@ -2,6 +2,7 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use web_sys::OffscreenCanvasRenderingContext2d;
 
+use crate::camera::Camera;
 use crate::entity::Entity;
 use crate::material::Material;
 use crate::model::Model;
@@ -12,11 +13,9 @@ use crate::vec3::Vec3;
 #[wasm_bindgen]
 pub struct Scene {
     entities: Vec<Entity>,
+    camera: Camera,
     pub width: u32,
     pub height: u32,
-    pub focal_length: u32,
-    pub focal_distance: u32,
-    pub appature: f32,
     pub samples: u32,
     pub bounces: u32,
     post_processors: Vec<Rc<dyn PostProcess>>,
@@ -27,6 +26,10 @@ impl Scene {
         &self.entities
     }
 
+    pub fn camera(&self) -> &Camera {
+        &self.camera
+    }
+
     pub fn post_processors(&self) -> &[Rc<dyn PostProcess>] {
         &self.post_processors
     }
@@ -35,23 +38,12 @@ impl Scene {
 #[wasm_bindgen]
 impl Scene {
     #[wasm_bindgen(constructor)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        width: u32,
-        height: u32,
-        focal_length: u32,
-        focal_distance: u32,
-        appature: f32,
-        samples: u32,
-        bounces: u32,
-    ) -> Self {
+    pub fn new(width: u32, height: u32, camera: Camera, samples: u32, bounces: u32) -> Self {
         Self {
             entities: vec![],
+            camera,
             width,
             height,
-            focal_length,
-            focal_distance,
-            appature,
             samples,
             bounces,
             post_processors: vec![],
