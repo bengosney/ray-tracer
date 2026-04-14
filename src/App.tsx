@@ -4,6 +4,7 @@ import CameraControls from "./CameraControls";
 import RenderSettings, { type Settings } from "./RenderSettings";
 import RenderStats from "./RenderStats";
 import { useRenderer } from "./hooks/useRenderer";
+import { CirclePlay, CircleStop, Download } from "lucide-react";
 
 const DEFAULT_SETTINGS: Settings = {
   render: {
@@ -63,11 +64,15 @@ function App() {
       <fieldset className="settings">
         <legend>Controls</legend>
         <div className="controls">
-          <button onClick={handlers.handleSave}>Save PNG</button>
-          <button onClick={handlers.handleStop} disabled={!stats.running}>
-            Stop
+          <button onClick={handlers.handleSave}>
+            <Download /> Download PNG
           </button>
-          <button onClick={handlers.handleRestart}>Restart</button>
+          <button onClick={handlers.handleStop} disabled={!stats.running}>
+            <CircleStop /> Stop
+          </button>
+          <button onClick={handlers.handleRestart}>
+            <CirclePlay /> Restart
+          </button>
         </div>
       </fieldset>
     </div>
