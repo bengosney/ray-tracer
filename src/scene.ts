@@ -1,4 +1,4 @@
-import { vec3, mag, sub } from "./utils/math";
+import { vec3, mag, sub, createRng } from "./utils/math";
 import { rgb } from "./utils/colour";
 import type { SceneObject, ModelData } from "./render.types";
 import RABBIT_MODEL from "./models/rabbit";
@@ -81,14 +81,15 @@ export const RABBIT_MODEL_DATA: ModelData = {
   ior: 1.5,
 };
 
-export function buildSceneData(sphereCount: number, focalDistance: number): SceneObject[] {
+export function buildSceneData(sphereCount: number, focalDistance: number, seed: number): SceneObject[] {
+  const random = createRng(seed);
   const scene: SceneObject[] = [...BASE_SCENE];
 
   for (let i = 0; i < sphereCount; i++) {
     for (let attempts = 0; attempts < 100; attempts++) {
-      const radius = 2 + Math.random() * 5;
-      const x = (Math.random() - 0.5) * 150;
-      const z = focalDistance + (Math.random() - 0.5) * 175;
+      const radius = 2 + random() * 5;
+      const x = (random() - 0.5) * 150;
+      const z = focalDistance + (random() - 0.5) * 175;
       const position = vec3(x, MAIN_SIZE - radius, z);
 
       let isIntersecting = false;
@@ -102,17 +103,17 @@ export function buildSceneData(sphereCount: number, focalDistance: number): Scen
       }
 
       if (!isIntersecting) {
-        const metallic = Math.random() > 0.6 ? 1.0 : 0.0;
-        const transmission = !metallic && Math.random() > 0.7 ? 1.0 : 0.0;
+        const metallic = random() > 0.6 ? 1.0 : 0.0;
+        const transmission = !metallic && random() > 0.7 ? 1.0 : 0.0;
 
         scene.push({
           shape: "sphere",
           radius,
           position,
           emission: rgb(0, 0, 0),
-          albedo: rgb(Math.random(), Math.random(), Math.random()),
+          albedo: rgb(random(), random(), random()),
           metallic,
-          roughness: Math.random(),
+          roughness: random(),
           transmission,
           ior: 1.5,
         });

@@ -12,6 +12,7 @@ import {
   reflect,
   degreeToRadians,
   vecToArray,
+  createRng,
 } from "./math";
 
 describe("vec3", () => {
@@ -135,6 +136,33 @@ describe("avg", () => {
 
   it("averages multiple vectors", () => {
     expect(avg([vec3(0, 0, 0), vec3(2, 4, 6)])).toEqual(vec3(1, 2, 3));
+  });
+});
+
+describe("createRng", () => {
+  it("produces values in [0, 1)", () => {
+    const random = createRng(123);
+    for (let i = 0; i < 1000; i++) {
+      const v = random();
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThan(1);
+    }
+  });
+
+  it("produces the same sequence for the same seed", () => {
+    const a = createRng(42);
+    const b = createRng(42);
+    for (let i = 0; i < 100; i++) {
+      expect(a()).toBe(b());
+    }
+  });
+
+  it("produces different sequences for different seeds", () => {
+    const a = createRng(1);
+    const b = createRng(2);
+    const valuesA = Array.from({ length: 10 }, () => a());
+    const valuesB = Array.from({ length: 10 }, () => b());
+    expect(valuesA).not.toEqual(valuesB);
   });
 });
 
