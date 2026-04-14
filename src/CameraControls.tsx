@@ -1,5 +1,19 @@
 import { useState, useCallback } from "react";
 import type { CameraSettings } from "./RenderSettings";
+import {
+  ArrowBigDown,
+  ArrowBigDownDash,
+  ArrowBigLeft,
+  ArrowBigRight,
+  ArrowBigUp,
+  ArrowBigUpDash,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  RefreshCcw,
+  RefreshCw,
+} from "lucide-react";
 
 interface CameraControlsProps {
   camera: CameraSettings;
@@ -53,23 +67,47 @@ function CameraControls({ camera, onCameraChange }: CameraControlsProps) {
         <div className="control-group">
           <span className="control-label">Move</span>
           <div className="control-grid">
-            <button onClick={() => move(0, -1, 0)}>Up</button>
-            <button onClick={() => move(0, 0, 1)}>Fwd</button>
-            <button onClick={() => move(0, 1, 0)}>Down</button>
-            <button onClick={() => move(-1, 0, 0)}>Left</button>
-            <button onClick={() => move(0, 0, -1)}>Back</button>
-            <button onClick={() => move(1, 0, 0)}>Right</button>
+            <button onClick={() => move(0, -1, 0)}>
+              <ArrowBigUpDash />
+            </button>
+            <button onClick={() => move(0, 0, 1)}>
+              <ArrowBigUp />
+            </button>
+            <button onClick={() => move(0, 1, 0)}>
+              <ArrowBigDownDash />
+            </button>
+            <button onClick={() => move(-1, 0, 0)}>
+              <ArrowBigLeft />
+            </button>
+            <button onClick={() => move(0, 0, -1)}>
+              <ArrowBigDown />
+            </button>
+            <button onClick={() => move(1, 0, 0)}>
+              <ArrowBigRight />
+            </button>
           </div>
         </div>
         <div className="control-group">
           <span className="control-label">Rotate</span>
           <div className="control-grid">
-            <button onClick={() => rotate(0, 0, -1)}>CCW</button>
-            <button onClick={() => rotate(1, 0, 0)}>Up</button>
-            <button onClick={() => rotate(0, 0, 1)}>CW</button>
-            <button onClick={() => rotate(0, -1, 0)}>Left</button>
-            <button onClick={() => rotate(-1, 0, 0)}>Down</button>
-            <button onClick={() => rotate(0, 1, 0)}>Right</button>
+            <button onClick={() => rotate(0, 0, -1)}>
+              <RefreshCcw />
+            </button>
+            <button onClick={() => rotate(1, 0, 0)}>
+              <ArrowUp />
+            </button>
+            <button onClick={() => rotate(0, 0, 1)}>
+              <RefreshCw />
+            </button>
+            <button onClick={() => rotate(0, -1, 0)}>
+              <ArrowLeft />
+            </button>
+            <button onClick={() => rotate(-1, 0, 0)}>
+              <ArrowDown />
+            </button>
+            <button onClick={() => rotate(0, 1, 0)}>
+              <ArrowRight />
+            </button>
           </div>
         </div>
       </div>
